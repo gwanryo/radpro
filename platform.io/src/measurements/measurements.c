@@ -15,6 +15,9 @@
 #include "../measurements/history.h"
 #include "../measurements/instantaneous.h"
 #include "../measurements/magneticfield.h"
+#if defined(FS5000)
+#include "../measurements/overview.h"
+#endif
 #include "../peripherals/display.h"
 #include "../peripherals/emf.h"
 #include "../peripherals/keyboard.h"
@@ -29,6 +32,9 @@
 
 typedef enum
 {
+#if defined(FS5000)
+    MEASUREMENTS_VIEW_OVERVIEW,
+#else
 #if defined(DISPLAY_240X320)
     MEASUREMENTS_VIEW_OVERVIEW,
 #endif
@@ -40,6 +46,7 @@ typedef enum
     MEASUREMENTS_VIEW_MAGNETIC_FIELD,
 #endif
     MEASUREMENTS_VIEW_HISTORY,
+#endif
 
     MEASUREMENTS_VIEW_NUM,
 } MeasurementView;
@@ -64,6 +71,9 @@ static const Menu measurementsMenu;
 // Measurements
 
 static OnViewEvent *const measurementViews[] = {
+#if defined(FS5000)
+    onOverviewViewEvent,
+#else
 #if defined(DISPLAY_240X320)
     onOverviewViewEvent,
 #endif
@@ -75,6 +85,7 @@ static OnViewEvent *const measurementViews[] = {
     onMagneticFieldViewEvent,
 #endif
     onHistoryViewEvent,
+#endif
 };
 
 static void setMeasurementViewSelect(MeasurementView index);
@@ -82,6 +93,10 @@ static void setMeasurementViewSelect(MeasurementView index);
 void resetMeasurements(void)
 {
     measurements.viewIndex = 0;
+
+#if defined(FS5000)
+    resetOverview();
+#endif
 
     resetPulses();
 
@@ -175,6 +190,13 @@ void updateMeasurements(void)
     // Set view
     if (!isDisplayEnabled() && measurements.alertPending)
     {
+#if defined(FS5000)
+        if (getInstantaneousRateAlertLevel() || getCumulativeDoseAlertLevel())
+        {
+            selectOverviewFirstPage();
+            setMeasurementViewSelect(MEASUREMENTS_VIEW_OVERVIEW);
+        }
+#else
         if (getInstantaneousRateAlertLevel())
             setMeasurementViewSelect(MEASUREMENTS_VIEW_INSTANTANEOUS_RATE);
         else if (getCumulativeDoseAlertLevel())
@@ -184,6 +206,7 @@ void updateMeasurements(void)
             setMeasurementViewSelect(MEASUREMENTS_VIEW_ELECTRIC_FIELD);
         else if (getMagneticFieldAlertLevel())
             setMeasurementViewSelect(MEASUREMENTS_VIEW_MAGNETIC_FIELD);
+#endif
 #endif
     }
 }

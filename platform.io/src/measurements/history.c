@@ -273,6 +273,11 @@ void updateHistory(void)
 }
 
 #if defined(FS5000)
+void resetHistoryTab(void)
+{
+    historyTab = HISTORY_TAB_10_MINUTES;
+}
+
 void selectHistoryTab(int32_t delta)
 {
     int32_t tab = (int32_t)historyTab + (delta % (int32_t)HISTORY_TAB_NUM);

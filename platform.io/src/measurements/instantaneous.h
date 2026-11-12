@@ -47,7 +47,7 @@ bool isInstantaneousRateConfidenceGood(void);
 AlertLevel getInstantaneousRateAlertLevel(void);
 
 void onInstantaneousRateViewEvent(ViewEvent event);
-#if defined(DISPLAY_240X320)
+#if defined(DISPLAY_240X320) && !defined(FS5000)
 void onOverviewViewEvent(ViewEvent event);
 #endif
 

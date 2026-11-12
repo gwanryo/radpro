@@ -362,7 +362,7 @@ void onInstantaneousRateViewEvent(ViewEvent event)
 
 // Overview view
 
-#if defined(DISPLAY_240X320)
+#if defined(DISPLAY_240X320) && !defined(FS5000)
 
 static void drawOverviewRow(uint32_t rowIndex, const char *keyString, float value, const Unit *unit)
 {

@@ -25,6 +25,8 @@ void loadHistory(void);
 void updateHistory(void);
 
 #if defined(FS5000)
+void resetHistoryTab(void);
+
 void selectHistoryTab(int32_t delta);
 
 const uint8_t *getHistoryLogValues(void);
