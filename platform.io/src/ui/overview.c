@@ -476,7 +476,7 @@ static void addGraphAlertLabel(GraphLabels *labels, const char *text, ColorIndex
 
 static void drawGraphLabels(const OverviewGraph *graph, const HistoryAxis *axis, GraphLabels *labels)
 {
-    int32_t prefixExponent = getHistoryAxisPrefixExponent(axis->top, graph->minPrefixExponent);
+    int32_t prefixExponent = getHistoryAxisIndexPrefixExponent(axis->lineIndices[axis->lineNum - 1], graph->minPrefixExponent);
 
     setFont(font_tiny);
     setFillColor(COLOR_INSTRUMENT_FRAME_PRIMARY);
@@ -488,7 +488,7 @@ static void drawGraphLabels(const OverviewGraph *graph, const HistoryAxis *axis,
 
         char text[32];
         strclr(text);
-        if (!strcatHistoryAxisLabel(text, value, prefixExponent))
+        if (!strcatHistoryAxisIndexLabel(text, axis->lineIndices[i - 1], prefixExponent))
             continue;
         if (isTop &&
             (strlen(text) + strlen(graph->unitName) + GRAPH_UNIT_EXTRA <= sizeof(text)))

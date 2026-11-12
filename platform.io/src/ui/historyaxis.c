@@ -10,27 +10,41 @@
 #include <math.h>
 #include <string.h>
 
-#include "ui/history.h"
-#include "ui/historyaxis.h"
+#include "../ui/history.h"
+#include "../ui/historyaxis.h"
 
-#define AXIS_EPSILON 1e-6F
-#define AXIS_EXPONENT_EPSILON 1e-5F
+#define AXIS_EPSILON 2e-5F
 #define AXIS_WIDE_RATIO 31.6227766F
 #define AXIS_LINE_SPACING 18
+#define AXIS_LABEL_DIGITS_MAX 3
+#define AXIS_LABEL_ZEROS_MAX 8
+
+static const uint8_t axisMantissas[] = {1, 2, 5};
+
+static void getAxisIndexParts(int32_t index, int32_t *decade, int32_t *remainder)
+{
+    *decade = index / 3;
+    *remainder = index % 3;
+    if (*remainder < 0)
+    {
+        *remainder += 3;
+        (*decade)--;
+    }
+}
 
 static float getAxisValue(int32_t index)
 {
-    static const float mantissa[] = {1, 2, 5};
+    int32_t decade;
+    int32_t remainder;
+    getAxisIndexParts(index, &decade, &remainder);
 
-    int32_t decade = index / 3;
-    int32_t remainder = index % 3;
-    if (remainder < 0)
-    {
-        remainder += 3;
-        decade--;
-    }
+    float power = 1.0F;
+    for (int32_t i = (decade < 0) ? -decade : decade; i > 0; i--)
+        power *= 10.0F;
 
-    return mantissa[remainder] * powf(10.0F, (float)decade);
+    float mantissa = axisMantissas[remainder];
+
+    return (decade < 0) ? mantissa / power : mantissa * power;
 }
 
 static int32_t getAxisIndexFloor(float value)
@@ -74,32 +88,35 @@ bool buildHistoryAxis(float minValue, float maxValue, float warningValue, int32_
 
     bool all = (axis->top / axis->bottom <= AXIS_WIDE_RATIO * (1.0F + AXIS_EPSILON));
 
-    float candidates[HISTORY_AXIS_LINE_MAX];
+    int32_t candidates[HISTORY_AXIS_LINE_MAX];
     uint32_t candidateNum = 0;
-    candidates[candidateNum++] = axis->bottom;
+    candidates[candidateNum++] = bottomIndex;
     for (int32_t index = bottomIndex + 1;
          index < topIndex && candidateNum < HISTORY_AXIS_LINE_MAX - 1;
          index++)
         if (all || (index % 3) == 0)
-            candidates[candidateNum++] = getAxisValue(index);
-    candidates[candidateNum++] = axis->top;
+            candidates[candidateNum++] = index;
+    candidates[candidateNum++] = topIndex;
 
     int32_t topY = getHistoryAxisY(axis, axis->top, height);
     int32_t lastY = getHistoryAxisY(axis, axis->bottom, height);
 
     axis->lineNum = 0;
-    axis->lineValues[axis->lineNum++] = candidates[0];
+    axis->lineIndices[axis->lineNum++] = candidates[0];
     for (uint32_t i = 1; i < candidateNum - 1; i++)
     {
-        int32_t y = getHistoryAxisY(axis, candidates[i], height);
+        int32_t y = getHistoryAxisY(axis, getAxisValue(candidates[i]), height);
         if (lastY - y >= AXIS_LINE_SPACING &&
             y - topY >= AXIS_LINE_SPACING)
         {
-            axis->lineValues[axis->lineNum++] = candidates[i];
+            axis->lineIndices[axis->lineNum++] = candidates[i];
             lastY = y;
         }
     }
-    axis->lineValues[axis->lineNum++] = candidates[candidateNum - 1];
+    axis->lineIndices[axis->lineNum++] = candidates[candidateNum - 1];
+
+    for (uint32_t i = 0; i < axis->lineNum; i++)
+        axis->lineValues[i] = getAxisValue(axis->lineIndices[i]);
 
     return true;
 }
@@ -122,67 +139,40 @@ int32_t getHistoryAxisY(const HistoryAxis *axis, float value, int32_t height)
     return y;
 }
 
-int32_t getHistoryAxisPrefixExponent(float top, int32_t minExponent)
+int32_t getHistoryAxisIndexPrefixExponent(int32_t index, int32_t minExponent)
 {
-    int32_t exponent = 3 * (int32_t)floorf(log10f(top) / 3 + AXIS_EXPONENT_EPSILON);
+    int32_t decade;
+    int32_t remainder;
+    getAxisIndexParts(index, &decade, &remainder);
+
+    int32_t exponent = decade - ((decade % 3) + 3) % 3;
 
     return (exponent > minExponent) ? exponent : minExponent;
 }
 
-bool strcatHistoryAxisLabel(char *s, float value, int32_t prefixExponent)
+bool strcatHistoryAxisIndexLabel(char *s, int32_t index, int32_t prefixExponent)
 {
-    if (value < 0)
-        return false;
+    int32_t decade;
+    int32_t remainder;
+    getAxisIndexParts(index, &decade, &remainder);
 
-    float scaled = value / powf(10.0F, (float)prefixExponent);
-
-    uint32_t scale = 1;
-    uint32_t digits = 0;
-    uint32_t number = 0;
-    bool found = false;
-    for (digits = 0; digits <= 3; digits++)
-    {
-        float product = scaled * (float)scale;
-        float rounded = floorf(product + 0.5F);
-        bool match = (rounded > 0)
-                         ? (fabsf(product - rounded) <= AXIS_EPSILON * rounded)
-                         : (product == 0);
-        if (match &&
-            rounded < 1e9F)
-        {
-            number = (uint32_t)rounded;
-            found = true;
-            break;
-        }
-        scale *= 10;
-    }
-    if (!found)
+    int32_t shift = decade - prefixExponent;
+    if ((shift < -AXIS_LABEL_DIGITS_MAX) ||
+        (shift > AXIS_LABEL_ZEROS_MAX))
         return false;
 
     char buffer[16];
     uint32_t length = 0;
-    uint32_t integer = number / scale;
-    uint32_t fraction = number % scale;
-
-    char reversed[10];
-    uint32_t reversedLength = 0;
-    do
+    if (shift < 0)
     {
-        reversed[reversedLength++] = '0' + (integer % 10);
-        integer /= 10;
-    } while (integer);
-    while (reversedLength)
-        buffer[length++] = reversed[--reversedLength];
-
-    if (digits)
-    {
+        buffer[length++] = '0';
         buffer[length++] = '.';
-        for (uint32_t i = digits; i > 0; i--)
-        {
-            scale /= 10;
-            buffer[length++] = '0' + (fraction / scale) % 10;
-        }
+        for (int32_t i = shift + 1; i < 0; i++)
+            buffer[length++] = '0';
     }
+    buffer[length++] = '0' + axisMantissas[remainder];
+    for (int32_t i = 0; i < shift; i++)
+        buffer[length++] = '0';
     buffer[length] = '\0';
 
     strcat(s, buffer);
