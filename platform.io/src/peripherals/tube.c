@@ -124,7 +124,7 @@ static float getTubeSensitivityForIndex(uint32_t index)
 
 const char *getTubeType(void)
 {
-    return getString(tubeTypeStrings[getTubeIndex()]);
+    return getString(tubeTypeStrings[settings.tubeType]);
 }
 
 float getTubeSensitivity(void)

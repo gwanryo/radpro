@@ -83,8 +83,6 @@ static const uint16_t loggingModeIntervals[] = {
     1,
 };
 
-static void stopDatalogRead(void);
-
 void resetDatalog(void)
 {
     selectMenuItem(&datalogMenu, 0);
@@ -490,7 +488,7 @@ bool startDatalogRead(void)
     return true;
 }
 
-static void stopDatalogRead(void)
+void stopDatalogRead(void)
 {
     static const uint8_t datalogEndOfRead = DATALOG_ENTRY_EMPTY;
 

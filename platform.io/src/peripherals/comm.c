@@ -384,6 +384,13 @@ void updateComm(void)
     // Poll comm hardware
     pollComm();
 
+    if ((comm.state == COMM_RX) && (comm.transmitState == TRANSMIT_DATALOG))
+    {
+        stopDatalogRead();
+
+        comm.transmitState = TRANSMIT_RESPONSE;
+    }
+
     // Process comm events
     switch (comm.state)
     {

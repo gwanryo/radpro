@@ -32,6 +32,7 @@ void updateDatalog(void);
 
 bool startDatalogRead(void);
 bool readDatalog(DatalogRecord *record);
+void stopDatalogRead(void);
 
 void showDatalogMenu(void);
 

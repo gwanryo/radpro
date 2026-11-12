@@ -315,7 +315,7 @@ void updatePowerState(void)
     {
         float thresholdVoltage = batteryLevel[i];
 
-        if (i >= level)
+        if (i >= power.batteryLevel)
             thresholdVoltage += BATTERY_HYSTERESIS_RANGE;
 
         if (power.batteryVoltage >= thresholdVoltage)
