@@ -85,7 +85,11 @@ typedef enum
 #define PADDING_LEFT 12
 #define PADDING_RIGHT PADDING_LEFT
 #define CONTENT_MULTILINE_MAX 9
+#if defined(FS5000)
+#define TITLEBAR_HEIGHT 24
+#else
 #define TITLEBAR_HEIGHT 48
+#endif
 #define TITLEBAR_SHADOW_HEIGHT 1
 #define TICKS_SPACING 4
 #define TICKS_SHORT 4

@@ -21,7 +21,7 @@ gcc -std=gnu11 -O1 -w -DSIMULATOR -DFS5000 -DDISPLAY_COLOR -DDISPLAY_240X320 -DK
     -DFONT_SYMBOLS_SMALL='"fonts/font_symbols_color_16.h"' \
     -I"$P/lib/mcu-renderer" -I"$P/src" "$HERE/harness.c" \
     "$P/lib/mcu-renderer/mcu-renderer.c" "$P/lib/mcu-renderer/mcu-renderer-st7789.c" \
-    "$P/src/ui/draw.c" "$P/src/ui/measurements.c" "$P/src/ui/system.c" \
+    "$P/src/ui/draw.c" "$P/src/ui/measurements.c" "$P/src/ui/system.c" "$P/src/ui/menu.c" "$P/src/ui/game.c" "$P/src/ui/rng.c" "$P/src/ui/statistics.c" \
     "$P/src/system/cstring.c" "$P/src/system/cmath.c" -lm -o "$OUT/harness.exe" || exit 1
 
 (cd "$OUT" && ./harness.exe) || exit 1

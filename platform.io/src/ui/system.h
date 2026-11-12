@@ -14,6 +14,9 @@
 
 void drawPowerOff(bool displayBatteryIcon);
 void drawTitleBar(const char *title);
+#if defined(FS5000)
+void drawMeasurementTitleBar(const char *averagingString);
+#endif
 void drawSplash(const char *message);
 void drawNotification(const char *title, const char *message);
 

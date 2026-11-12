@@ -8,8 +8,16 @@
 #include "peripherals/rtc.h"
 #include "system/cstring.h"
 #include "system/settings.h"
+#include "measurements/pulses.h"
+#include "system/power.h"
+#include "system/system.h"
 #include "ui/draw.h"
+#include "ui/game.h"
+#include "ui/menu.h"
+#include "ui/rng.h"
+#include "ui/view.h"
 #include "ui/measurements.h"
+#include "ui/statistics.h"
 #include "ui/system.h"
 
 extern mr_t mr;
@@ -62,23 +70,34 @@ static void onSend16(uint16_t value)
     if (++cx > x1) { cx = x0; cy++; }
 }
 
+static bool rtcSet = true;
+static bool iconsAll;
+
 void getDeviceDateTime(RTCDateTime *dateTime)
 {
-    *dateTime = (RTCDateTime){2026, 11, 12, 15, 14, 0};
+    *dateTime = (RTCDateTime){rtcSet ? 2026 : 0, 11, 12, 15, 14, 0};
 }
 uint8_t getBatteryLevel(void) { return 3; }
 bool isBatteryCharging(void) { return false; }
 bool isUSBPowered(void) { return false; }
 AlertLevel getAlertLevel(void) { return ALERTLEVEL_NONE; }
 bool isAlertEnabled(void) { return true; }
-bool isAlertFlashing(void) { return false; }
-bool isAlertPending(void) { return false; }
-bool isLockModeEnabled(void) { return false; }
-bool isSoundIconActive(void) { return false; }
+bool isAlertFlashing(void) { return iconsAll; }
+bool isAlertPending(void) { return iconsAll; }
+bool isLockModeEnabled(void) { return iconsAll; }
+bool isSoundIconActive(void) { return iconsAll; }
+
+float getBatteryVoltage(void) { return 3.912F; }
+void getDeviceId(char *id) { strcpy(id, "0123456789ABCDEF0123"); }
+uint32_t getTubeTime(void) { return 98765; }
+uint32_t getTubePulseCount(void) { return 123456; }
+float getTubeDeadTime(void) { return 0.000123F; }
+void requestViewUpdate(void) {}
+void showView(OnViewEvent *onViewEvent) {}
 
 static bool saveFailed;
 
-static void save(const char *path)
+static void save(const char *path, int height)
 {
     FILE *f = fopen(path, "wb");
     if (!f)
@@ -87,8 +106,8 @@ static void save(const char *path)
         saveFailed = true;
         return;
     }
-    fprintf(f, "P6\n240 320\n255\n");
-    for (int y = 0; y < 320; y++)
+    fprintf(f, "P6\n240 %d\n255\n", height);
+    for (int y = 0; y < height; y++)
         for (int x = 0; x < 240; x++)
         {
             uint16_t c = fb[y][x];
@@ -105,13 +124,18 @@ static void fill(void)
             fb[y][x] = 0xf81f;
 }
 
-static void render(const char *name, void (*draw)(void))
+static void renderRegion(const char *name, void (*draw)(void), int height)
 {
     char path[256];
     fill();
     draw();
     snprintf(path, sizeof(path), "%s.ppm", name);
-    save(path);
+    save(path, height);
+}
+
+static void render(const char *name, void (*draw)(void))
+{
+    renderRegion(name, draw, 320);
 }
 
 static struct
@@ -134,6 +158,53 @@ static void drawOverview(void)
     drawMeasurementOverviewRow(0, getString(STRING_AVERAGE), ov.avg, ov.avgUnit);
     drawMeasurementOverviewRow(1, getString(STRING_CUMULATIVE), ov.dose, ov.doseUnit);
     drawMeasurementOverviewRow(2, getString(STRING_MAX), ov.max, ov.maxUnit);
+}
+
+static const char *averagingString;
+
+static void drawTitleBarCase(void)
+{
+    drawMeasurementTitleBar(averagingString);
+}
+
+void drawMenu(void);
+static MenuState menuState = {0, 2};
+
+static const char *onMenuGetOption(menu_size_t index, MenuStyle *style)
+{
+    static const char *const items[] = {
+        STRING_INSTANTANEOUS, STRING_HISTORY, STRING_RATE, STRING_CUMULATIVE,
+        STRING_DISPLAY_FLASH, STRING_SLEEP, STRING_CLICKS, STRING_RANDOM_GENERATOR,
+    };
+    *style = (index == 1) ? MENUSTYLE_SUBMENU : (index == 2) ? MENUSTYLE_CHECKED : 0;
+    return items[index];
+}
+
+static const Menu settingsMenu = {STRING_SETTINGS, &menuState, 8, onMenuGetOption, 0, 0};
+
+static void drawMenuCase(void)
+{
+    showMenu(&settingsMenu);
+    drawMenu();
+}
+
+static void drawGameCase(void)
+{
+    uint8_t board[8][8];
+    for (int y = 0; y < 8; y++)
+        for (int x = 0; x < 8; x++)
+            board[y][x] = (y < 3 && ((x + y) & 1)) ? 1 : (y > 4 && ((x + y) & 1)) ? 2 : 0;
+    drawGame(board, (const char[2][16]){"12:34:56", "1:02:03"});
+}
+
+static void drawRNGCase(void)
+{
+    drawRNG(getString(STRING_RANDOM_GENERATOR), false, "0123456789ABCDEF", "50%");
+}
+
+static void drawNotificationCase(void)
+{
+    drawNotification(getString(STRING_CUMULATIVE), getString(STRING_NOTIFICATION_CUMULATIVE_RESET_CONFIRM));
 }
 
 static void drawStrings(void)
@@ -180,6 +251,27 @@ int main(void)
     render("overview-fault", drawOverview);
 
     render("strings", drawStrings);
+
+    settings.displayTheme = DISPLAY_THEME_DAY;
+    averagingString = getString(STRING_ADAPTIVE_FAST);
+    renderRegion("titlebar-normal", drawTitleBarCase, 24);
+    averagingString = getString(STRING_10_SECONDS);
+    renderRegion("titlebar-fixed", drawTitleBarCase, 24);
+    iconsAll = true;
+    settings.pulseSound = true;
+    averagingString = getString(STRING_ADAPTIVE_PRECISION);
+    renderRegion("titlebar-icons", drawTitleBarCase, 24);
+    iconsAll = false;
+    rtcSet = false;
+    averagingString = getString(STRING_ADAPTIVE_FAST);
+    renderRegion("titlebar-nortc", drawTitleBarCase, 24);
+    rtcSet = true;
+
+    render("menu-settings", drawMenuCase);
+    render("statistics", drawStatistics);
+    render("game", drawGameCase);
+    render("rng", drawRNGCase);
+    render("notification", drawNotificationCase);
 
     return saveFailed ? 1 : 0;
 }
