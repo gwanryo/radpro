@@ -14,6 +14,7 @@
 #include "ui/draw.h"
 #include "ui/game.h"
 #include "ui/menu.h"
+#include "ui/overview.h"
 #include "ui/rng.h"
 #include "ui/view.h"
 #include "ui/measurements.h"
@@ -162,6 +163,46 @@ static void drawOverview(void)
 
 static const char *averagingString;
 
+static OverviewPage1 page1;
+static float page1Bar;
+
+static void drawPage1Bar(void)
+{
+    drawMeasurementCompactBar(page1Bar, -8, 1E-6F, 10E-6F);
+}
+
+static void drawPage1Case(void)
+{
+    drawMeasurementTitleBar(averagingString);
+    drawOverviewPage1(&page1, drawPage1Bar);
+}
+
+static OverviewPage1 makePage1(const char *value, const char *unit, const char *confidence, MeasurementStyle style,
+                               const char *avg, const char *avgUnit, const char *max, const char *maxUnit,
+                               const char *dose, const char *doseUnit, MeasurementStyle doseStyle,
+                               const char *start, const char *elapsed)
+{
+    OverviewPage1 page = {0};
+    strcpy(page.value, value);
+    strcpy(page.unit, unit);
+    strcpy(page.confidence, confidence);
+    page.style = style;
+    page.rows[0] = (OverviewRow){getString(STRING_AVERAGE), "", "", MEASUREMENTSTYLE_NORMAL};
+    page.rows[1] = (OverviewRow){getString(STRING_MAX), "", "", MEASUREMENTSTYLE_NORMAL};
+    page.rows[2] = (OverviewRow){getString(STRING_CUMULATIVE), "", "", doseStyle};
+    page.rows[3] = (OverviewRow){getString(STRING_COUNTS), "", "", MEASUREMENTSTYLE_NORMAL};
+    strcpy(page.rows[0].value, avg);
+    strcpy(page.rows[0].unit, avgUnit);
+    strcpy(page.rows[1].value, max);
+    strcpy(page.rows[1].unit, maxUnit);
+    strcpy(page.rows[2].value, dose);
+    strcpy(page.rows[2].unit, doseUnit);
+    strcpy(page.rows[3].value, "11,849");
+    strcpy(page.startTime, start);
+    strcpy(page.elapsedTime, elapsed);
+    return page;
+}
+
 static void drawPlainTitleCase(void)
 {
     drawTitleBar(getString(STRING_NOTIFICATION_CUMULATIVE_RESET_CONFIRM));
@@ -256,6 +297,44 @@ int main(void)
     render("overview-fault", drawOverview);
 
     render("strings", drawStrings);
+
+    averagingString = getString(STRING_ADAPTIVE_FAST);
+    page1Bar = 0.142E-6F;
+    page1 = makePage1("0.142", "\xc2\xb5Sv/h", "\xc2\xb1" "12%", MEASUREMENTSTYLE_NORMAL,
+                      "0.128", "\xc2\xb5Sv/h", "0.317", "\xc2\xb5Sv/h", "1.284", "\xc2\xb5Sv", MEASUREMENTSTYLE_NORMAL,
+                      "11.13 05:13", "10:01:12");
+    settings.displayTheme = DISPLAY_THEME_DAY;
+    render("page1-day", drawPage1Case);
+    settings.displayTheme = DISPLAY_THEME_DUSK;
+    render("page1-dusk", drawPage1Case);
+    settings.displayTheme = DISPLAY_THEME_NIGHT;
+    render("page1-night", drawPage1Case);
+
+    settings.displayTheme = DISPLAY_THEME_DAY;
+    page1Bar = 12.47E-6F;
+    page1 = makePage1("12.47", "\xc2\xb5Sv/h", "\xc2\xb1" "2.1%", MEASUREMENTSTYLE_ALARM,
+                      "3.906", "\xc2\xb5Sv/h", "12.91", "\xc2\xb5Sv/h", "18.62", "\xc2\xb5Sv", MEASUREMENTSTYLE_ALARM,
+                      "11.13 05:13", "10:01:12");
+    render("page1-alarm", drawPage1Case);
+
+    page1 = makePage1("0.000", "\xc2\xb5Sv/h", "", MEASUREMENTSTYLE_NORMAL,
+                      "0.128", "\xc2\xb5Sv/h", "0.317", "\xc2\xb5Sv/h", "1.284", "\xc2\xb5Sv", MEASUREMENTSTYLE_NORMAL,
+                      "11.13 05:13", "10:01:12");
+    page1.faultString = getString(STRING_ALERT_FAULT);
+    render("page1-fault", drawPage1Case);
+
+    page1Bar = 12.47E-3F;
+    page1 = makePage1("12.47", "mSv/h", "\xc2\xb1" "0.5%", MEASUREMENTSTYLE_WARNING,
+                      "9.876", "mSv/h", "13.52", "mSv/h", "123.4", "mSv", MEASUREMENTSTYLE_NORMAL,
+                      "11.13 05:13", "10:01:12");
+    render("page1-big", drawPage1Case);
+
+    page1Bar = 0.142E-6F;
+    page1 = makePage1("0.142", "\xc2\xb5Sv/h", "\xc2\xb1" "12%", MEASUREMENTSTYLE_NORMAL,
+                      "0.128", "\xc2\xb5Sv/h", "0.317", "\xc2\xb5Sv/h", "1.284", "\xc2\xb5Sv", MEASUREMENTSTYLE_NORMAL,
+                      "--", "1234:56:12");
+    render("page1-long", drawPage1Case);
+    settings.displayTheme = DISPLAY_THEME_DAY;
 
     settings.displayTheme = DISPLAY_THEME_DAY;
     averagingString = getString(STRING_ADAPTIVE_FAST);
