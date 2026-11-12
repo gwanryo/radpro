@@ -99,10 +99,13 @@ static void overview(const char *value, const char *unit, float confidence, Meas
             fb[y][x] = 0xf81f;
     drawTitleBar(getString(STRING_MEASUREMENTS));
     drawMeasurementOverviewValue(value, unit, confidence, style);
+    if (barValue < 0)
+        drawMeasurementOverviewAlert(getString(STRING_ALERT_FAULT));
+    else
+        drawMeasurementOverviewBar(barValue, -8, 1E-6F, 10E-6F);
     drawMeasurementOverviewRow(0, getString(STRING_AVERAGE), avg, avgUnit);
     drawMeasurementOverviewRow(1, getString(STRING_CUMULATIVE), dose, doseUnit);
     drawMeasurementOverviewRow(2, getString(STRING_MAX), max, maxUnit);
-    drawMeasurementBar(barValue, -8, 1E-6F, 10E-6F);
 }
 
 int main(void)
@@ -126,6 +129,10 @@ int main(void)
     save("overview-cpm.ppm");
 
     settings.displayTheme = DISPLAY_THEME_DAY;
+    overview("0.000", "\xc2\xb5Sv/h", 0, MEASUREMENTSTYLE_NORMAL,
+             "0.128", " \xc2\xb5Sv/h", "1.284", " \xc2\xb5Sv", "0.317", " \xc2\xb5Sv/h", -1);
+    save("overview-fault.ppm");
+
     static const char *const lines[] = {
         STRING_INSTANTANEOUS " " STRING_HISTORY " " STRING_RATE,
         STRING_RATE_WARNING, STRING_RATE_ALARM,

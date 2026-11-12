@@ -219,14 +219,12 @@ void drawMeasurementInfo(const char *keyString, const char *valueString, const c
 #define BAR_HEIGHT (CONTENT_BOTTOM - BAR_TOP)
 
 #define BAR_LABEL_LEFT BAR_LEFT
-#define BAR_LABEL_TOP BAR_TOP
 #define BAR_LABEL_WIDTH BAR_WIDTH
 #define BAR_LABEL_HEIGHT (BAR_HEIGHT - BAR_IMAGEBUFFER_HEIGHT)
 #define BAR_LABEL_OFFSETY (BAR_LABEL_HEIGHT - FONT_SMALL_LINE_HEIGHT)
 #define BAR_LABEL_CELL_HALFWIDTH ((3 * BAR_TICKS_WIDTH / BAR_DECADES) / 2)
 
 #define BAR_IMAGEBUFFER_LEFT BAR_LEFT
-#define BAR_IMAGEBUFFER_TOP (BAR_LABEL_TOP + BAR_LABEL_HEIGHT)
 #define BAR_IMAGEBUFFER_WIDTH BAR_WIDTH
 #define BAR_IMAGEBUFFER_HEIGHT (BAR_TICKS_HEIGHT + TICKS_SPACING + BAR_FRAME_HEIGHT + MEASUREMENT_PADDING_BOTTOM)
 
@@ -342,7 +340,7 @@ static int16_t getMeasurementBarX(float value, float offset)
     return BAR_FRAME_LEFT + x;
 }
 
-void drawMeasurementBar(float value, int32_t minExponent, float warningValue, float alarmValue)
+static void drawMeasurementBarAt(int16_t top, float value, int32_t minExponent, float warningValue, float alarmValue)
 {
     // Pre-calculations
     const LabelSpan *labelSpansTicks;
@@ -421,7 +419,7 @@ void drawMeasurementBar(float value, int32_t minExponent, float warningValue, fl
             labelOffset = textHalfWidth;
 
         drawCenteredText(buffer,
-                         &(mr_rectangle_t){labelX, BAR_LABEL_TOP, labelWidth, BAR_LABEL_HEIGHT},
+                         &(mr_rectangle_t){labelX, top, labelWidth, BAR_LABEL_HEIGHT},
                          &(mr_point_t){labelOffset, BAR_LABEL_OFFSETY});
 
         labelTicksIndex++;
@@ -463,19 +461,26 @@ void drawMeasurementBar(float value, int32_t minExponent, float warningValue, fl
             fillSpanIndex++;
         }
 
-        drawImage(&(mr_rectangle_t){BAR_IMAGEBUFFER_LEFT, BAR_IMAGEBUFFER_TOP + y, BAR_IMAGEBUFFER_WIDTH, 1}, line);
+        drawImage(&(mr_rectangle_t){BAR_IMAGEBUFFER_LEFT, top + BAR_LABEL_HEIGHT + y, BAR_IMAGEBUFFER_WIDTH, 1}, line);
     }
 
     return;
+}
+
+void drawMeasurementBar(float value, int32_t minExponent, float warningValue, float alarmValue)
+{
+    drawMeasurementBarAt(BAR_TOP, value, minExponent, warningValue, alarmValue);
 }
 
 #if defined(DISPLAY_240X320)
 
 #define OVERVIEW_ROW_NUM 3
 #define OVERVIEW_ROW_HEIGHT FONT_SMALL_LINE_HEIGHT
-#define OVERVIEW_ROWS_TOP (BAR_TOP - OVERVIEW_ROW_NUM * OVERVIEW_ROW_HEIGHT)
+#define OVERVIEW_ROWS_TOP (CONTENT_BOTTOM - OVERVIEW_ROW_NUM * OVERVIEW_ROW_HEIGHT)
 
-#define OVERVIEW_UNIT_TOP (OVERVIEW_ROWS_TOP - OVERVIEW_UNIT_HEIGHT)
+#define OVERVIEW_BAR_TOP (OVERVIEW_ROWS_TOP - BAR_HEIGHT)
+
+#define OVERVIEW_UNIT_TOP (OVERVIEW_BAR_TOP - OVERVIEW_UNIT_HEIGHT)
 #define OVERVIEW_UNIT_HEIGHT FONT_MEDIUM_LINE_HEIGHT
 #define OVERVIEW_UNIT_LEFT OVERVIEW_CONFIDENCE_WIDTH
 #define OVERVIEW_UNIT_WIDTH (CONTENT_WIDTH - OVERVIEW_UNIT_LEFT)
@@ -516,6 +521,20 @@ void drawMeasurementOverviewValue(const char *valueString, const char *unitStrin
                      &(mr_rectangle_t){CONTENT_LEFT, OVERVIEW_UNIT_TOP, OVERVIEW_CONFIDENCE_WIDTH, OVERVIEW_UNIT_HEIGHT},
                      &(mr_point_t){MEASUREMENT_PADDING_LEFT, OVERVIEW_CONFIDENCE_OFFSETY},
                      false);
+}
+
+void drawMeasurementOverviewBar(float value, int32_t minExponent, float warningValue, float alarmValue)
+{
+    drawMeasurementBarAt(OVERVIEW_BAR_TOP, value, minExponent, warningValue, alarmValue);
+}
+
+void drawMeasurementOverviewAlert(const char *alertString)
+{
+    setFont(font_small);
+    setStrokeColor(COLOR_ELEMENT_NEUTRAL);
+    drawText(alertString,
+             &(mr_rectangle_t){CONTENT_LEFT, OVERVIEW_BAR_TOP, CONTENT_WIDTH, BAR_HEIGHT},
+             &(mr_point_t){MEASUREMENT_PADDING_LEFT, (BAR_HEIGHT - FONT_SMALL_LINE_HEIGHT) / 2});
 }
 
 void drawMeasurementOverviewRow(uint32_t rowIndex, const char *keyString, const char *valueString, const char *unitString)

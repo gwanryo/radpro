@@ -270,15 +270,15 @@ static void drawInstantaneousRateTab(void)
     drawMeasurementInfo(keyString, valueString, unitString, getInstantaneousRateMeasurementStyle());
 }
 
-static void drawInstantaneousRateBar(void)
+static void drawInstantaneousRateBar(void (*drawBar)(float value, int32_t minExponent, float warningValue, float alarmValue))
 {
     float scale = pulseUnits[settings.doseUnits].rate.scale;
     float microSievertPerHourScale = scale / pulseUnits[DOSE_UNITS_SIEVERTS].rate.scale;
 
-    drawMeasurementBar(instantaneous.rate.value * scale,
-                       doseUnitsBarMinExponent[settings.doseUnits],
-                       rateAlerts[settings.rateWarning] * microSievertPerHourScale,
-                       rateAlerts[settings.rateAlarm] * microSievertPerHourScale);
+    drawBar(instantaneous.rate.value * scale,
+            doseUnitsBarMinExponent[settings.doseUnits],
+            rateAlerts[settings.rateWarning] * microSievertPerHourScale,
+            rateAlerts[settings.rateAlarm] * microSievertPerHourScale);
 }
 
 static void drawInstantaneousRateView(void)
@@ -286,7 +286,7 @@ static void drawInstantaneousRateView(void)
     drawInstantaneousRateValue();
 
     if (instantaneousTab == INSTANTANEOUS_TAB_BAR)
-        drawInstantaneousRateBar();
+        drawInstantaneousRateBar(drawMeasurementBar);
     else if (instantaneousTab != INSTANTANEOUS_TAB_ALERT)
         drawInstantaneousRateTab();
     else
@@ -357,14 +357,14 @@ static void drawOverviewView(void)
     drawTitleBar(getString(STRING_MEASUREMENTS));
     drawMeasurementOverviewValue(valueString, unitString, instantaneous.rate.confidence, getInstantaneousRateMeasurementStyle());
 
+    if (getTubeFaultAlertLevel())
+        drawMeasurementOverviewAlert(getString(STRING_ALERT_FAULT));
+    else
+        drawInstantaneousRateBar(drawMeasurementOverviewBar);
+
     drawOverviewRow(0, getString(STRING_AVERAGE), getAverageRate(), &units->rate);
     drawOverviewRow(1, getString(STRING_CUMULATIVE), getCumulativeDosePulseCount(), &units->dose);
     drawOverviewRow(2, getString(STRING_MAX), instantaneous.maxValue, &units->rate);
-
-    if (getTubeFaultAlertLevel())
-        drawMeasurementAlert(getString(STRING_ALERT_FAULT));
-    else
-        drawInstantaneousRateBar();
 }
 
 void onOverviewViewEvent(ViewEvent event)
