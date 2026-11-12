@@ -81,11 +81,14 @@
 
 // Data log reset success notification
 #define STRING_NOTIFICATION_DATALOG_RESET_SUCCESS "УСПІХ\n\nЖурнал даних скинуто."
+#define STRING_NOTIFICATION_CUMULATIVE_RESET_CONFIRM "Reset cumulative dose?\n\nDose, counts and start time will be cleared."
+#define STRING_NOTIFICATION_CUMULATIVE_RESET_SUCCESS "Cumulative dose reset."
 
 // Measurements title strings
 #define STRING_INSTANTANEOUS "Миттєвий"
 #define STRING_AVERAGE "Середній"
 #define STRING_CUMULATIVE "Накопичувальний"
+#define STRING_CUMULATIVE_DOSE "Cumulative dose"
 #define STRING_HISTORY "Історія"
 #define STRING_ELECTRIC_FIELD "Електричне поле"
 #define STRING_MAGNETIC_FIELD "Магнітне поле"
@@ -99,6 +102,12 @@
 // Measurements info strings
 #define STRING_ALERT_FAULT "НЕСПРАВНІСТЬ"
 #define STRING_ALERT_DONE "ГОТОВО"
+#define STRING_START "Start"
+#define STRING_ELAPSED "Elapsed"
+#define STRING_AVERAGE_TIME "Average time"
+#define STRING_NOW "Now"
+#define STRING_WARNING "Warning"
+#define STRING_ALARM "Alarm"
 
 // History period strings
 #define STRING_HISTORY_10_MINUTES "10 хв"
@@ -107,6 +116,12 @@
 #define STRING_HISTORY_1_WEEK "1 тиж"
 #define STRING_HISTORY_1_MONTH "1 міс"
 #define STRING_HISTORY_1_YEAR "1 р"
+#define STRING_HISTORY_HALF_10_MINUTES "5 min ago"
+#define STRING_HISTORY_HALF_1_HOUR "30 min ago"
+#define STRING_HISTORY_HALF_1_DAY "12 h ago"
+#define STRING_HISTORY_HALF_1_WEEK "3.5 d ago"
+#define STRING_HISTORY_HALF_1_MONTH "14 d ago"
+#define STRING_HISTORY_HALF_1_YEAR "6 mo ago"
 
 // Settings menu items
 #define STRING_SETTINGS "Налаштування"

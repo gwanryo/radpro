@@ -16,6 +16,9 @@ gcc -std=gnu11 -O1 -w -DSIMULATOR -DFS5000 -DDISPLAY_COLOR -DDISPLAY_240X320 -DK
     -DFONT_MEDIUM='"fonts/font_medium_ko_color_32.h"' \
     -DFONT_LARGE='"fonts/font_large_color_84.h"' \
     -DFONT_SYMBOLS='"fonts/font_symbols_color.h"' \
+    -DFONT_TINY='"fonts/font_tiny_ko_color_14.h"' \
+    -DFONT_VALUE='"fonts/font_value_color_54.h"' \
+    -DFONT_SYMBOLS_SMALL='"fonts/font_symbols_color_16.h"' \
     -I"$P/lib/mcu-renderer" -I"$P/src" "$HERE/harness.c" \
     "$P/lib/mcu-renderer/mcu-renderer.c" "$P/lib/mcu-renderer/mcu-renderer-st7789.c" \
     "$P/src/ui/draw.c" "$P/src/ui/measurements.c" "$P/src/ui/system.c" \

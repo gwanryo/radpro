@@ -15,6 +15,11 @@
 #include FONT_LARGE
 #include FONT_MEDIUM
 #include FONT_SMALL
+#if defined(FS5000)
+#include FONT_TINY
+#include FONT_VALUE
+#include FONT_SYMBOLS_SMALL
+#endif
 
 #include "../system/cstring.h"
 #include "../system/power.h"

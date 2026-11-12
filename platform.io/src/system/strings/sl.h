@@ -81,11 +81,14 @@
 
 // Data log reset success notification
 #define STRING_NOTIFICATION_DATALOG_RESET_SUCCESS "USPEH\n\nDnevnik podatkov je bil ponastavljen."
+#define STRING_NOTIFICATION_CUMULATIVE_RESET_CONFIRM "Reset cumulative dose?\n\nDose, counts and start time will be cleared."
+#define STRING_NOTIFICATION_CUMULATIVE_RESET_SUCCESS "Cumulative dose reset."
 
 // Measurements title strings
 #define STRING_INSTANTANEOUS "Trenutno"
 #define STRING_AVERAGE "Povprečno"
 #define STRING_CUMULATIVE "Kumulativno"
+#define STRING_CUMULATIVE_DOSE "Cumulative dose"
 #define STRING_HISTORY "Zgodovina"
 #define STRING_ELECTRIC_FIELD "Električno polje"
 #define STRING_MAGNETIC_FIELD "Magnetno polje"
@@ -99,6 +102,12 @@
 // Measurements info strings
 #define STRING_ALERT_FAULT "NAPAKA"
 #define STRING_ALERT_DONE "KONČANO"
+#define STRING_START "Start"
+#define STRING_ELAPSED "Elapsed"
+#define STRING_AVERAGE_TIME "Average time"
+#define STRING_NOW "Now"
+#define STRING_WARNING "Warning"
+#define STRING_ALARM "Alarm"
 
 // History period strings
 #define STRING_HISTORY_10_MINUTES "10 min"
@@ -107,6 +116,12 @@
 #define STRING_HISTORY_1_WEEK "1 t"
 #define STRING_HISTORY_1_MONTH "1 m"
 #define STRING_HISTORY_1_YEAR "1 l"
+#define STRING_HISTORY_HALF_10_MINUTES "5 min ago"
+#define STRING_HISTORY_HALF_1_HOUR "30 min ago"
+#define STRING_HISTORY_HALF_1_DAY "12 h ago"
+#define STRING_HISTORY_HALF_1_WEEK "3.5 d ago"
+#define STRING_HISTORY_HALF_1_MONTH "14 d ago"
+#define STRING_HISTORY_HALF_1_YEAR "6 mo ago"
 
 // Settings menu items
 #define STRING_SETTINGS "Nastavitve"

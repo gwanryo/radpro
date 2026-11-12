@@ -140,6 +140,18 @@ typedef enum
 #endif
 #endif
 
+#if defined(FS5000)
+#define FONT_TINY_ASCENT 17
+#define FONT_TINY_DESCENT 5
+#define FONT_TINY_CAP_HEIGHT 12
+#define FONT_TINY_LINE_HEIGHT 22
+#define FONT_VALUE_ASCENT 58
+#define FONT_VALUE_DESCENT 16
+#define FONT_VALUE_CAP_HEIGHT 42
+#define FONT_VALUE_LINE_HEIGHT 74
+#define FONT_SYMBOLS_SMALL_LINE_HEIGHT 16
+#endif
+
 #define TITLEBAR_LEFT 0
 #define TITLEBAR_TOP 0
 #define TITLEBAR_WIDTH DISPLAY_WIDTH
@@ -159,6 +171,11 @@ extern const uint8_t font_large[];
 extern const uint8_t font_medium[];
 extern const uint8_t font_small[];
 extern const uint8_t font_symbols[];
+#if defined(FS5000)
+extern const uint8_t font_tiny[];
+extern const uint8_t font_value[];
+extern const uint8_t font_symbols_small[];
+#endif
 
 extern const mr_rectangle_t contentRectangle;
 

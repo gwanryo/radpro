@@ -81,11 +81,14 @@
 
 // Data log reset success notification
 #define STRING_NOTIFICATION_DATALOG_RESET_SUCCESS "SUKSESS\n\nDataloggen er tilbakestilt."
+#define STRING_NOTIFICATION_CUMULATIVE_RESET_CONFIRM "Reset cumulative dose?\n\nDose, counts and start time will be cleared."
+#define STRING_NOTIFICATION_CUMULATIVE_RESET_SUCCESS "Cumulative dose reset."
 
 // Measurements title strings
 #define STRING_INSTANTANEOUS "Øyeblikkelig"
 #define STRING_AVERAGE "Gjennomsnitt"
 #define STRING_CUMULATIVE "Kumulativ"
+#define STRING_CUMULATIVE_DOSE "Cumulative dose"
 #define STRING_HISTORY "Historikk"
 #define STRING_ELECTRIC_FIELD "Elektrisk felt"
 #define STRING_MAGNETIC_FIELD "Magnetisk felt"
@@ -99,6 +102,12 @@
 // Measurements info strings
 #define STRING_ALERT_FAULT "FEIL"
 #define STRING_ALERT_DONE "FERDIG"
+#define STRING_START "Start"
+#define STRING_ELAPSED "Elapsed"
+#define STRING_AVERAGE_TIME "Average time"
+#define STRING_NOW "Now"
+#define STRING_WARNING "Warning"
+#define STRING_ALARM "Alarm"
 
 // History period strings
 #define STRING_HISTORY_10_MINUTES "10 min"
@@ -107,6 +116,12 @@
 #define STRING_HISTORY_1_WEEK "1 u"
 #define STRING_HISTORY_1_MONTH "1 m"
 #define STRING_HISTORY_1_YEAR "1 å"
+#define STRING_HISTORY_HALF_10_MINUTES "5 min ago"
+#define STRING_HISTORY_HALF_1_HOUR "30 min ago"
+#define STRING_HISTORY_HALF_1_DAY "12 h ago"
+#define STRING_HISTORY_HALF_1_WEEK "3.5 d ago"
+#define STRING_HISTORY_HALF_1_MONTH "14 d ago"
+#define STRING_HISTORY_HALF_1_YEAR "6 mo ago"
 
 // Settings menu items
 #define STRING_SETTINGS "Innstillinger"
