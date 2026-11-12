@@ -36,7 +36,36 @@ typedef struct
     char elapsedTime[16];
 } OverviewPage1;
 
+typedef struct
+{
+    const uint8_t *logValues;
+    float scale;
+    const char *unitName;
+    int32_t minPrefixExponent;
+    float warningValue;
+    float alarmValue;
+    uint32_t timeTicksNum;
+    const char *periodString;
+    const char *halfString;
+} OverviewGraph;
+
+typedef struct
+{
+    char instantaneousKey[24];
+    char instantaneousValue[16];
+    MeasurementStyle instantaneousStyle;
+    char averageKey[24];
+    char averageValue[16];
+    MeasurementStyle averageStyle;
+    char secondaryKey[16];
+    char secondaryValue[16];
+    char averageTime[16];
+    char averageConfidence[16];
+    const char *faultString;
+} OverviewPage2;
+
 void drawOverviewPage1(const OverviewPage1 *page, void (*drawBar)(void));
+void drawOverviewPage2(const OverviewPage2 *page, const OverviewGraph *graph);
 void drawOverviewPageDots(uint32_t pageIndex, uint32_t pageNum, int16_t top);
 void drawMeasurementCompactBar(float value, int32_t minExponent, float warningValue, float alarmValue);
 

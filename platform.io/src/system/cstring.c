@@ -156,6 +156,13 @@ void strcatMetricPower(char *s, int32_t exponent, int32_t minPrefixIndex)
     strcatMetricPrefix(s, prefixIndex);
 }
 
+#if defined(FS5000)
+void strcatMetricPrefixFromExponent(char *s, int32_t exponent)
+{
+    strcatMetricPrefix(s, divideDown(exponent, 3));
+}
+#endif
+
 const char *hexDigits = "0123456789abcdef";
 
 static inline char getHexDigit(uint32_t value)
