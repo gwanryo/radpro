@@ -7,6 +7,7 @@
  * License: MIT
  */
 
+#include "../measurements/average.h"
 #include "../measurements/instantaneous.h"
 #include "../peripherals/tube.h"
 #include "../peripherals/voice.h"
@@ -269,20 +270,23 @@ static void drawInstantaneousRateTab(void)
     drawMeasurementInfo(keyString, valueString, unitString, getInstantaneousRateMeasurementStyle());
 }
 
+static void drawInstantaneousRateBar(void)
+{
+    float scale = pulseUnits[settings.doseUnits].rate.scale;
+    float microSievertPerHourScale = scale / pulseUnits[DOSE_UNITS_SIEVERTS].rate.scale;
+
+    drawMeasurementBar(instantaneous.rate.value * scale,
+                       doseUnitsBarMinExponent[settings.doseUnits],
+                       rateAlerts[settings.rateWarning] * microSievertPerHourScale,
+                       rateAlerts[settings.rateAlarm] * microSievertPerHourScale);
+}
+
 static void drawInstantaneousRateView(void)
 {
     drawInstantaneousRateValue();
 
     if (instantaneousTab == INSTANTANEOUS_TAB_BAR)
-    {
-        float scale = pulseUnits[settings.doseUnits].rate.scale;
-        float microSievertPerHourScale = scale / pulseUnits[DOSE_UNITS_SIEVERTS].rate.scale;
-
-        drawMeasurementBar(instantaneous.rate.value * scale,
-                           doseUnitsBarMinExponent[settings.doseUnits],
-                           rateAlerts[settings.rateWarning] * microSievertPerHourScale,
-                           rateAlerts[settings.rateAlarm] * microSievertPerHourScale);
-    }
+        drawInstantaneousRateBar();
     else if (instantaneousTab != INSTANTANEOUS_TAB_ALERT)
         drawInstantaneousRateTab();
     else
@@ -328,6 +332,75 @@ void onInstantaneousRateViewEvent(ViewEvent event)
         break;
     }
 }
+
+// Overview view
+
+#if defined(DISPLAY_240X320)
+
+static void drawOverviewRow(uint32_t rowIndex, const char *keyString, float value, const Unit *unit)
+{
+    char valueString[32] = "";
+    char unitString[32] = " ";
+    buildValueString(valueString, unitString, value, unit, doseUnitsMinMetricPrefix[settings.doseUnits]);
+
+    drawMeasurementOverviewRow(rowIndex, keyString, valueString, unitString);
+}
+
+static void drawOverviewView(void)
+{
+    const PulseUnits *units = &pulseUnits[settings.doseUnits];
+
+    char valueString[32] = "";
+    char unitString[32] = "";
+    buildValueString(valueString, unitString, instantaneous.rate.value, &units->rate, doseUnitsMinMetricPrefix[settings.doseUnits]);
+
+    drawTitleBar(getString(STRING_MEASUREMENTS));
+    drawMeasurementOverviewValue(valueString, unitString, instantaneous.rate.confidence, getInstantaneousRateMeasurementStyle());
+
+    drawOverviewRow(0, getString(STRING_AVERAGE), getAverageRate(), &units->rate);
+    drawOverviewRow(1, getString(STRING_CUMULATIVE), getCumulativeDosePulseCount(), &units->dose);
+    drawOverviewRow(2, getString(STRING_MAX), instantaneous.maxValue, &units->rate);
+
+    if (getTubeFaultAlertLevel())
+        drawMeasurementAlert(getString(STRING_ALERT_FAULT));
+    else
+        drawInstantaneousRateBar();
+}
+
+void onOverviewViewEvent(ViewEvent event)
+{
+    if (onMeasurementViewEvent(event))
+        return;
+
+    switch (event)
+    {
+    case EVENT_KEY_RESET:
+        triggerVibration();
+
+        clearInstantaneousRate();
+
+        requestViewUpdate();
+
+        break;
+
+#if defined(VOICE)
+    case EVENT_KEY_PLAY:
+        playVoiceInstantaneousRate();
+
+        break;
+#endif
+
+    case EVENT_DRAW:
+        drawOverviewView();
+
+        break;
+
+    default:
+        break;
+    }
+}
+
+#endif
 
 // Instantaneous menu
 

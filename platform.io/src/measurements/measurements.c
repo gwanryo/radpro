@@ -29,6 +29,9 @@
 
 typedef enum
 {
+#if defined(DISPLAY_240X320)
+    MEASUREMENTS_VIEW_OVERVIEW,
+#endif
     MEASUREMENTS_VIEW_INSTANTANEOUS_RATE,
     MEASUREMENTS_VIEW_AVERAGE_RATE,
     MEASUREMENTS_VIEW_CUMULATIVE_DOSE,
@@ -61,6 +64,9 @@ static const Menu measurementsMenu;
 // Measurements
 
 static OnViewEvent *const measurementViews[] = {
+#if defined(DISPLAY_240X320)
+    onOverviewViewEvent,
+#endif
     onInstantaneousRateViewEvent,
     onAverageRateViewEvent,
     onCumulativeDoseViewEvent,
@@ -75,7 +81,7 @@ static void setMeasurementViewSelect(MeasurementView index);
 
 void resetMeasurements(void)
 {
-    measurements.viewIndex = MEASUREMENTS_VIEW_INSTANTANEOUS_RATE;
+    measurements.viewIndex = 0;
 
     resetPulses();
 

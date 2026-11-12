@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rad Pro FS-5000 통합 화면 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600&family=Noto+Sans:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --page: #dfe3e6; --ink: #1b2126; --muted: #56616b; --rule: #b9c1c8; --panel: #eef1f3; --bezel: #23272b;
+
+    /* Rad Pro 펌웨어 팔레트 (ui/draw.c) — 낮 테마 */
+    --active: #1f1f1f; --neutral: #535353; --bar: #fcfcfc; --shadow: #c9c9c9; --bg: #f7f7f7;
+    --accent: #2d548b; --tint: #9cc1f5; --frame: #ffffff; --frame-line: #bebebe; --tick: #707070;
+    --run: #008300; --warn: #fe9413; --warn-tint: #ffd4af; --alarm: #e30019; --alarm-tint: #ffbdb3;
+
+    /* 표시 상태 */
+    --value: var(--accent); --fill: var(--accent); --fill-tint: var(--tint);
+    --level: 26%; --avg: 25%; --max: 31%;
+  }
+  body:has(#t-dusk:checked) {
+    --active: #e9e9e9; --neutral: #b0b0b0; --bar: #2e2e2e; --shadow: #161616; --bg: #1f1f1f;
+    --accent: #84b3ef; --tint: #3d526d; --frame: #363636; --frame-line: #5e5e5e; --tick: #8c8c8c;
+    --run: #198100; --warn: #fa7d00; --warn-tint: #7a3d00; --alarm: #e1000e; --alarm-tint: #7a020a;
+  }
+  body:has(#t-night:checked) {
+    --active: #eaa75e; --neutral: #c78842; --bar: #000; --shadow: #000; --bg: #000;
+    --accent: #38a784; --tint: #10211a; --frame: #000; --frame-line: #78532c; --tick: #9c6a34;
+    --run: #008800; --warn: #e67800; --warn-tint: #351400; --alarm: #e90f20; --alarm-tint: #460000;
+  }
+  body:has(#s-alarm:checked) {
+    --value: var(--alarm); --fill: var(--alarm); --fill-tint: var(--alarm-tint);
+    --level: 59%; --avg: 44%; --max: 60%;
+  }
+  .a { display: none; }
+  body:has(#s-alarm:checked) .n { display: none; }
+  body:has(#s-alarm:checked) .a { display: inline; }
+  body:has(#s-alarm:checked) svg.a { display: block; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 400 15px/1.65 "Noto Sans KR", sans-serif; }
+  .page { max-width: 1180px; margin-inline: auto; padding-inline: 28px; padding-block: 40px 72px; }
+  h1 { font-size: 30px; line-height: 1.25; margin: 0 0 10px; font-weight: 600; letter-spacing: -0.01em; }
+  h2 { font-size: 19px; margin: 0 0 4px; font-weight: 600; }
+  p { margin: 0 0 12px; }
+  .lede { max-width: 720px; color: var(--muted); }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 24px; margin-block: 26px 34px; padding-block: 14px; border-block: 1px solid var(--rule); position: sticky; top: 0; background: var(--page); z-index: 2; }
+  fieldset { border: 0; padding: 0; margin: 0; display: flex; align-items: center; gap: 6px; }
+  legend { float: left; margin-right: 10px; color: var(--muted); font-size: 13px; padding: 0; }
+  .controls input { position: absolute; opacity: 0; }
+  .controls label { padding: 5px 13px; border: 1px solid var(--rule); border-radius: 3px; cursor: pointer; font-size: 14px; }
+  .controls input:checked + label { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .controls input:focus-visible + label { outline: 2px solid #1463c4; outline-offset: 2px; }
+
+  .options { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 44px 28px; }
+  .option .tag { color: var(--muted); font-size: 13px; }
+  .option ul { margin: 12px 0 0; padding-left: 18px; font-size: 14px; color: var(--muted); }
+  .option li { margin-bottom: 3px; }
+  .option li b { color: var(--ink); font-weight: 600; }
+
+  /* 기기 화면: 실제 240×320 px 좌표로 그린다 */
+  .bezel { width: 264px; padding: 12px; background: var(--bezel); border-radius: 10px; margin-block: 14px 0; }
+  .lcd { position: relative; width: 240px; height: 320px; overflow: hidden; background: var(--bg); color: var(--active);
+         font-family: "Noto Sans", "Noto Sans KR", sans-serif; font-weight: 600; }
+  .lcd * { position: absolute; white-space: nowrap; margin: 0; }
+  .lcd .a, .lcd .n { position: static; }
+  .title { left: 0; top: 0; width: 240px; height: 47px; background: var(--bar); border-bottom: 1px solid var(--shadow); height: 48px; }
+  .title b { left: 12px; top: 9px; font-size: 21px; line-height: 30px; font-weight: 600; }
+  .title i { right: 12px; top: 9px; font-size: 21px; line-height: 30px; font-style: normal; }
+  .title u { right: 76px; top: 18px; width: 20px; height: 11px; border: 2px solid var(--run); border-radius: 2px; }
+  .title u::after { content: ""; position: absolute; left: 1px; top: 1px; width: 10px; height: 5px; background: var(--run); }
+  .s { font-size: 21px; line-height: 30px; }
+  .m { font-size: 32px; line-height: 45px; }
+  .l { font-size: 84px; line-height: 84px; letter-spacing: -1px; color: var(--value); }
+  .k { color: var(--neutral); }
+  .v { color: var(--value); }
+  .r { right: 12px; text-align: right; }
+  .x { left: 12px; }
+  .rule { left: 0; width: 240px; height: 1px; background: var(--shadow); }
+
+  /* 가로 로그 막대 */
+  .hbar { left: 12px; width: 216px; height: 18px; background: var(--frame); border: 1px solid var(--frame-line); }
+  .hbar span { left: 0; top: 0; bottom: 0; }
+  .hbar .zw { left: 43%; width: 14.3%; background: var(--warn-tint); }
+  .hbar .za { left: 57.3%; right: 0; background: var(--alarm-tint); }
+  .hbar .f { width: var(--level); background: var(--fill); }
+  .ticks { left: 12px; width: 216px; height: 8px;
+           background: repeating-linear-gradient(90deg, var(--tick) 0 1px, transparent 1px 30.7px); }
+
+  /* 세로 로그 게이지 */
+  .vbar { left: 12px; top: 60px; width: 30px; height: 248px; background: var(--frame); border: 1px solid var(--frame-line); }
+  .vbar span { left: 0; right: 0; }
+  .vbar .zw { bottom: 43%; height: 14.3%; background: var(--warn-tint); }
+  .vbar .za { bottom: 57.3%; top: 0; background: var(--alarm-tint); }
+  .vbar .f { bottom: 0; height: var(--level); background: var(--fill); }
+  .vticks { left: 44px; top: 60px; width: 8px; height: 248px;
+            background: repeating-linear-gradient(0deg, var(--tick) 0 1px, transparent 1px 35.3px); }
+  .mark { left: 8px; width: 38px; height: 3px; background: var(--active); }
+  .mark.avg { bottom: calc(12px + 248px * 0.25); }
+  .mark.max { bottom: calc(12px + 248px * 0.31); height: 1px; }
+  body:has(#s-alarm:checked) .mark.avg { bottom: calc(12px + 248px * 0.44); }
+  body:has(#s-alarm:checked) .mark.max { bottom: calc(12px + 248px * 0.60); }
+
+  .chart { left: 12px; width: 216px; background: var(--frame); border: 1px solid var(--frame-line); }
+  .chart svg { left: 0; top: 0; width: 100%; height: 100%; }
+  .stripe { left: 0; width: 5px; background: var(--value); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 14px; margin-top: 12px; }
+  .scroll { overflow-x: auto; }
+  th, td { text-align: left; padding: 9px 14px 9px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-weight: 600; white-space: nowrap; }
+  section { margin-top: 56px; }
+  code { font-size: 13px; background: var(--panel); padding: 1px 5px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>한 화면에 다 보는 통합 화면 시안</h1>
+  <p class="lede">지금은 순간·평균·누적·기록을 키로 넘겨 가며 봅니다. 아래 네 가지는 그 값을 FS-5000의 240×320 화면 한 장에 모은 배치입니다. 화면은 실제 픽셀 좌표와 펌웨어 팔레트로 그렸고, 펌웨어에 이미 있는 글꼴 크기(84·32·21 px)만 썼습니다.</p>
+
+  <div class="controls">
+    <fieldset><legend>테마</legend>
+      <input type="radio" name="t" id="t-day" checked><label for="t-day">낮</label>
+      <input type="radio" name="t" id="t-dusk"><label for="t-dusk">황혼</label>
+      <input type="radio" name="t" id="t-night"><label for="t-night">밤</label>
+    </fieldset>
+    <fieldset><legend>상태</legend>
+      <input type="radio" name="s" id="s-normal" checked><label for="s-normal">평상시</label>
+      <input type="radio" name="s" id="s-alarm"><label for="s-alarm">경보</label>
+    </fieldset>
+  </div>
+
+  <div class="options">
+
+    <article class="option">
+      <h2>A. 계기판</h2>
+      <div class="tag">순간값을 지금처럼 크게, 나머지는 아래 세 줄</div>
+      <div class="bezel"><div class="lcd">
+        <div class="title"><b>종합</b><u></u><i>15:14</i></div>
+        <div class="l r" style="top:52px"><span class="n">0.142</span><span class="a">12.47</span></div>
+        <div class="s v x" style="top:136px"><span class="n">±12%</span><span class="a">±2%</span></div>
+        <div class="m k r" style="top:128px">µSv/h</div>
+        <div class="ticks" style="top:174px"></div>
+        <div class="hbar" style="top:184px"><span class="zw"></span><span class="za"></span><span class="f"></span></div>
+        <div class="rule" style="top:212px"></div>
+        <div class="s k x" style="top:217px">평균</div>
+        <div class="s r" style="top:217px"><span class="n">0.128 µSv/h</span><span class="a">3.906 µSv/h</span></div>
+        <div class="s k x" style="top:251px">누적</div>
+        <div class="s r" style="top:251px"><span class="n">1.284 µSv</span><span class="a">18.62 µSv</span></div>
+        <div class="s k x" style="top:285px">최대</div>
+        <div class="s r" style="top:285px"><span class="n">0.317 µSv/h</span><span class="a">12.91 µSv/h</span></div>
+      </div></div>
+      <ul>
+        <li><b>잘하는 것</b> 멀리서도 순간값이 읽힙니다. 기존 화면과 가장 닮아 익숙합니다.</li>
+        <li><b>잃는 것</b> 시간에 따른 변화는 보이지 않습니다.</li>
+        <li><b>구현</b> 기존 그리기 함수 재사용, 새 글꼴 없음.</li>
+      </ul>
+    </article>
+
+    <article class="option">
+      <h2>B. 추세</h2>
+      <div class="tag">순간값 아래에 최근 10분 그래프</div>
+      <div class="bezel"><div class="lcd">
+        <div class="title"><b>종합</b><u></u><i>15:14</i></div>
+        <div class="l r" style="top:52px"><span class="n">0.142</span><span class="a">12.47</span></div>
+        <div class="s v x" style="top:136px"><span class="n">±12%</span><span class="a">±2%</span></div>
+        <div class="m k r" style="top:128px">µSv/h</div>
+        <div class="chart" style="top:176px;height:66px">
+          <svg class="n" viewBox="0 0 216 66" preserveAspectRatio="none">
+            <path d="M0 66V40h12v-4h10v6h14v8h12v-5h16v-9h12v4h14v7h16v6h14v-8h12v-10h14v5h12v-7h14v4h44V66z" fill="var(--tint)"/>
+            <path d="M0 40h12v-4h10v6h14v8h12v-5h16v-9h12v4h14v7h16v6h14v-8h12v-10h14v5h12v-7h14v4h44" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+          </svg>
+          <svg class="a" viewBox="0 0 216 66" preserveAspectRatio="none">
+            <path d="M0 66V56h40v-3h30v-6h20v-12h16v-14h14v-8h20v4h18v-6h20v3h38V66z" fill="var(--alarm-tint)"/>
+            <path d="M0 56h40v-3h30v-6h20v-12h16v-14h14v-8h20v4h18v-6h20v3h38" fill="none" stroke="var(--alarm)" stroke-width="1.5"/>
+            <path d="M0 22h216" stroke="var(--alarm)" stroke-width="1" stroke-dasharray="4 4"/>
+          </svg>
+        </div>
+        <div class="s k x" style="top:251px">평균</div>
+        <div class="s r" style="top:251px"><span class="n">0.128 µSv/h</span><span class="a">3.906 µSv/h</span></div>
+        <div class="s k x" style="top:285px">누적</div>
+        <div class="s r" style="top:285px"><span class="n">1.284 µSv</span><span class="a">18.62 µSv</span></div>
+      </div></div>
+      <ul>
+        <li><b>잘하는 것</b> 값이 오르는 중인지 내리는 중인지 바로 보입니다. 경보선도 그래프에 겹칩니다.</li>
+        <li><b>잃는 것</b> 최대값 줄과 로그 막대가 빠집니다.</li>
+        <li><b>구현</b> 기록 화면의 그래프를 작게 다시 그려야 해서 A보다 코드가 늡니다.</li>
+      </ul>
+    </article>
+
+    <article class="option">
+      <h2>C. 삼단</h2>
+      <div class="tag">순간·평균·누적을 같은 크기로</div>
+      <div class="bezel"><div class="lcd">
+        <div class="title"><b>종합</b><u></u><i>15:14</i></div>
+        <div class="stripe" style="top:48px;height:90px"></div>
+        <div class="s k" style="left:17px;top:54px">순간</div>
+        <div class="s k r" style="top:54px"><span class="n">±12%</span><span class="a">±2%</span></div>
+        <div class="m v" style="left:17px;top:86px"><span class="n">0.142</span><span class="a">12.47</span></div>
+        <div class="s k r" style="top:96px">µSv/h</div>
+        <div class="rule" style="top:138px"></div>
+        <div class="s k" style="left:17px;top:145px">평균</div>
+        <div class="s k r" style="top:145px"><span class="n">12:34</span><span class="a">12:34</span></div>
+        <div class="m" style="left:17px;top:177px"><span class="n">0.128</span><span class="a">3.906</span></div>
+        <div class="s k r" style="top:187px">µSv/h</div>
+        <div class="rule" style="top:229px"></div>
+        <div class="s k" style="left:17px;top:236px">누적</div>
+        <div class="s k r" style="top:236px">2:41:07</div>
+        <div class="m" style="left:17px;top:268px"><span class="n">1.284</span><span class="a">18.62</span></div>
+        <div class="s k r" style="top:278px">µSv</div>
+      </div></div>
+      <ul>
+        <li><b>잘하는 것</b> 세 값을 같은 무게로 비교합니다. 평균 시간·누적 시간까지 다 들어갑니다.</li>
+        <li><b>잃는 것</b> 숫자가 32 px라 팔 길이 밖에서는 읽기 어렵습니다. 막대·그래프 없음.</li>
+        <li><b>구현</b> 가장 단순합니다. 글자와 사각형뿐.</li>
+      </ul>
+    </article>
+
+    <article class="option">
+      <h2>D. 세로 게이지</h2>
+      <div class="tag">왼쪽 로그 눈금 하나에 순간·평균·최대를 함께</div>
+      <div class="bezel"><div class="lcd">
+        <div class="title"><b>종합</b><u></u><i>15:14</i></div>
+        <div class="vbar"><span class="zw"></span><span class="za"></span><span class="f"></span></div>
+        <div class="vticks"></div>
+        <div class="mark avg"></div>
+        <div class="mark max"></div>
+        <div class="s k" style="left:66px;top:54px">순간</div>
+        <div class="s v r" style="top:54px"><span class="n">±12%</span><span class="a">±2%</span></div>
+        <div class="m v r" style="top:82px"><span class="n">0.142</span><span class="a">12.47</span></div>
+        <div class="s k r" style="top:122px">µSv/h</div>
+        <div class="rule" style="top:160px;left:66px;width:162px"></div>
+        <div class="s k" style="left:66px;top:166px">평균</div>
+        <div class="s r" style="top:196px"><span class="n">0.128 µSv/h</span><span class="a">3.906 µSv/h</span></div>
+        <div class="rule" style="top:234px;left:66px;width:162px"></div>
+        <div class="s k" style="left:66px;top:240px">누적</div>
+        <div class="s r" style="top:270px"><span class="n">1.284 µSv</span><span class="a">18.62 µSv</span></div>
+      </div></div>
+      <ul>
+        <li><b>잘하는 것</b> 순간값(채움), 평균(굵은 표식), 최대(가는 선)가 경고·경보 구간 어디쯤인지 한눈에 보입니다.</li>
+        <li><b>잃는 것</b> 순간값 숫자가 32 px로 작아집니다. 표식 뜻을 한 번은 익혀야 합니다.</li>
+        <li><b>구현</b> 기존 가로 막대를 세로로 새로 그려야 합니다.</li>
+      </ul>
+    </article>
+  </div>
+
+  <section>
+    <h2>비교</h2>
+    <div class="scroll"><table>
+      <tr><th></th><th>A. 계기판</th><th>B. 추세</th><th>C. 삼단</th><th>D. 세로 게이지</th></tr>
+      <tr><th>순간값 숫자 크기</th><td>84 px</td><td>84 px</td><td>32 px</td><td>32 px</td></tr>
+      <tr><th>평균</th><td>값</td><td>값</td><td>값 + 측정 시간</td><td>값 + 눈금 표식</td></tr>
+      <tr><th>누적</th><td>값</td><td>값</td><td>값 + 측정 시간</td><td>값</td></tr>
+      <tr><th>최대</th><td>값</td><td>없음</td><td>없음</td><td>눈금 표식</td></tr>
+      <tr><th>시간 변화</th><td>없음</td><td>10분 그래프</td><td>없음</td><td>없음</td></tr>
+      <tr><th>경고·경보 구간</th><td>가로 막대</td><td>그래프의 경보선</td><td>색 띠</td><td>세로 게이지</td></tr>
+      <tr><th>새로 필요한 그리기 코드</th><td>거의 없음</td><td>작은 그래프</td><td>없음</td><td>세로 막대</td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>모든 시안에 공통인 전제</h2>
+    <p>아직 정해지지 않았고, 시안을 고른 뒤 확정할 항목입니다.</p>
+    <ul>
+      <li>화면 이름은 "종합"으로 두었습니다. 새 문자열이라 한국어 글꼴을 다시 만들어야 합니다.</li>
+      <li>측정 화면 순환의 맨 앞에 넣는 것을 가정했습니다. 기존 순간·평균·누적·기록 화면은 그대로 둡니다.</li>
+      <li>값이 네 자리를 넘거나 단위가 바뀌어도(mSv/h, cpm) 같은 자리에 들어가도록 오른쪽 정렬했습니다.</li>
+      <li>경보 상태에서는 순간값과 채움 색이 경보색으로 바뀝니다. 기존 화면과 같은 규칙입니다.</li>
+      <li>표본 숫자는 임의 값입니다.</li>
+    </ul>
+  </section>
+</div>
+</body>
+</html>

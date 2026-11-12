@@ -468,3 +468,74 @@ void drawMeasurementBar(float value, int32_t minExponent, float warningValue, fl
 
     return;
 }
+
+#if defined(DISPLAY_240X320)
+
+#define OVERVIEW_ROW_NUM 3
+#define OVERVIEW_ROW_HEIGHT FONT_SMALL_LINE_HEIGHT
+#define OVERVIEW_ROWS_TOP (BAR_TOP - OVERVIEW_ROW_NUM * OVERVIEW_ROW_HEIGHT)
+
+#define OVERVIEW_UNIT_TOP (OVERVIEW_ROWS_TOP - OVERVIEW_UNIT_HEIGHT)
+#define OVERVIEW_UNIT_HEIGHT FONT_MEDIUM_LINE_HEIGHT
+#define OVERVIEW_UNIT_LEFT OVERVIEW_CONFIDENCE_WIDTH
+#define OVERVIEW_UNIT_WIDTH (CONTENT_WIDTH - OVERVIEW_UNIT_LEFT)
+
+#define OVERVIEW_CONFIDENCE_WIDTH (2 * CONTENT_WIDTH / 5)
+#define OVERVIEW_CONFIDENCE_OFFSETY (OVERVIEW_UNIT_HEIGHT - FONT_SMALL_LINE_HEIGHT)
+
+#define OVERVIEW_VALUE_HEIGHT (OVERVIEW_UNIT_TOP - CONTENT_TOP)
+#define OVERVIEW_VALUE_OFFSETY ((OVERVIEW_VALUE_HEIGHT - FONT_LARGE_CAP_HEIGHT) / 2 - (FONT_LARGE_ASCENT - FONT_LARGE_CAP_HEIGHT))
+
+void drawMeasurementOverviewValue(const char *valueString, const char *unitString, float confidence, MeasurementStyle style)
+{
+    setFont(font_large);
+    setStrokeColor(measurementStyleColorIndex[style]);
+    drawRightAlignedText(valueString,
+                         &(mr_rectangle_t){CONTENT_LEFT, CONTENT_TOP, CONTENT_WIDTH, OVERVIEW_VALUE_HEIGHT},
+                         &(mr_point_t){CONTENT_WIDTH - MEASUREMENT_PADDING_RIGHT, OVERVIEW_VALUE_OFFSETY});
+
+    setFont(font_medium);
+    setStrokeColor(COLOR_ELEMENT_NEUTRAL);
+    drawRightAlignedText(unitString,
+                         &(mr_rectangle_t){OVERVIEW_UNIT_LEFT, OVERVIEW_UNIT_TOP, OVERVIEW_UNIT_WIDTH, OVERVIEW_UNIT_HEIGHT},
+                         &(mr_point_t){OVERVIEW_UNIT_WIDTH - MEASUREMENT_PADDING_RIGHT, 0});
+
+    char confidenceString[8];
+    char confidenceUnit[8];
+    strclr(confidenceString);
+    strclr(confidenceUnit);
+    if (confidence != 0)
+    {
+        strcat(confidenceString, getString(STRING_PLUSMINUS));
+        strcatFloat(confidenceString, 100 * confidence, confidence < 0.1F ? 1 : 0);
+        strcat(confidenceUnit, getString(STRING_PERCENT));
+    }
+    setFont(font_small);
+    drawValueAndUnit(confidenceString,
+                     confidenceUnit,
+                     &(mr_rectangle_t){CONTENT_LEFT, OVERVIEW_UNIT_TOP, OVERVIEW_CONFIDENCE_WIDTH, OVERVIEW_UNIT_HEIGHT},
+                     &(mr_point_t){MEASUREMENT_PADDING_LEFT, OVERVIEW_CONFIDENCE_OFFSETY},
+                     false);
+}
+
+void drawMeasurementOverviewRow(uint32_t rowIndex, const char *keyString, const char *valueString, const char *unitString)
+{
+    setFont(font_small);
+
+    int16_t rowTop = OVERVIEW_ROWS_TOP + rowIndex * OVERVIEW_ROW_HEIGHT;
+    int16_t valueWidth = getTextWidth(valueString) + getTextWidth(unitString) + MEASUREMENT_PADDING_RIGHT;
+    int16_t keyWidth = CONTENT_WIDTH - valueWidth;
+
+    setStrokeColor(COLOR_ELEMENT_NEUTRAL);
+    drawText(keyString,
+             &(mr_rectangle_t){CONTENT_LEFT, rowTop, keyWidth, OVERVIEW_ROW_HEIGHT},
+             &(mr_point_t){MEASUREMENT_PADDING_LEFT, 0});
+
+    drawValueAndUnit(valueString,
+                     unitString,
+                     &(mr_rectangle_t){CONTENT_LEFT + keyWidth, rowTop, valueWidth, OVERVIEW_ROW_HEIGHT},
+                     &(mr_point_t){0, 0},
+                     true);
+}
+
+#endif

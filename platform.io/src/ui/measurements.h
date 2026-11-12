@@ -24,5 +24,9 @@ void drawMeasurementValue(const char *valueString, const char *unitString, float
 void drawMeasurementAlert(const char *alertString);
 void drawMeasurementInfo(const char *keyString, const char *valueString, const char *unitString, MeasurementStyle style);
 void drawMeasurementBar(float value, int32_t minExponent, float warningValue, float alarmValue);
+#if defined(DISPLAY_240X320)
+void drawMeasurementOverviewValue(const char *valueString, const char *unitString, float confidence, MeasurementStyle style);
+void drawMeasurementOverviewRow(uint32_t rowIndex, const char *keyString, const char *valueString, const char *unitString);
+#endif
 
 #endif
