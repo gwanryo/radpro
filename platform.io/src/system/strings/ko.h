@@ -44,8 +44,8 @@
 #define STRING_GAUSS_UNIT "G"
 
 // Units for indicating Geiger tube pulse count, as in "1 count" or "14 counts"
-#define STRING_COUNT "회"
-#define STRING_COUNTS "회"
+#define STRING_COUNT "카운트"
+#define STRING_COUNTS "카운트"
 
 // Time strings
 #define STRING_24_HOURS "24시간"
@@ -71,7 +71,7 @@
 #define STRING_HIGH "높음"
 
 // Firmware checksum failure notification
-#define STRING_SPLASH_FIRMWARE_CHECKSUM_FAILURE "경고\n\n펌웨어 체크섬 실패."
+#define STRING_SPLASH_FIRMWARE_CHECKSUM_FAILURE "경고\n\n펌웨어 체크섬 오류."
 
 // Custom HV profile notification
 #define STRING_NOTIFICATION_HVCUSTOM "경고\n\n잘못된 값은 장치를 손상시킬 수 있습니다."
@@ -83,17 +83,17 @@
 #define STRING_NOTIFICATION_DATALOG_RESET_SUCCESS "성공\n\n데이터 로그가 초기화되었습니다."
 
 // Measurements title strings
-#define STRING_INSTANTANEOUS "즉시"
+#define STRING_INSTANTANEOUS "순간"
 #define STRING_AVERAGE "평균"
 #define STRING_CUMULATIVE "누적"
-#define STRING_HISTORY "기록"
+#define STRING_HISTORY "추이"
 #define STRING_ELECTRIC_FIELD "전기장"
 #define STRING_MAGNETIC_FIELD "자기장"
 
 // Measurements secondary view strings
 #define STRING_TIME "시간"
 #define STRING_MAX "최대"
-#define STRING_RATE "속도"
+#define STRING_RATE "선량률"
 #define STRING_DOSE "선량"
 
 // Measurements info strings
@@ -118,7 +118,7 @@
 #define STRING_DISPLAY "디스플레이"
 #define STRING_DATE_AND_TIME "날짜 및 시간"
 #define STRING_POWER "전원"
-#define STRING_RANDOM_GENERATOR "랜덤 생성기"
+#define STRING_RANDOM_GENERATOR "난수 생성기"
 #define STRING_GAME "게임"
 #define STRING_STATISTICS "통계"
 #define STRING_DATAMODE "데이터 모드"
@@ -128,13 +128,13 @@
 #define STRING_VOICE "음성"
 #define STRING_VIBRATION "진동"
 #define STRING_PULSE_LED "펄스 LED"
-#define STRING_DISPLAY_FLASH "디스플레이 플래시"
+#define STRING_DISPLAY_FLASH "화면 깜박임"
 #define STRING_THRESHOLD "임계값"
 
 // Alerts menu items
-#define STRING_INDICATION "표시"
-#define STRING_RATE_WARNING "속도 경고"
-#define STRING_RATE_ALARM "속도 경보"
+#define STRING_INDICATION "알림 방식"
+#define STRING_RATE_WARNING "선량률 경고"
+#define STRING_RATE_ALARM "선량률 경보"
 #define STRING_DOSE_WARNING "선량 경고"
 #define STRING_DOSE_ALARM "선량 경보"
 #define STRING_ELECTRIC_FIELD_ALARM "전기장 경보"
@@ -163,17 +163,17 @@
 #define STRING_BACKGROUND_RADIATION "자연방사선"
 
 // Instantaneous menu items
-#define STRING_ADAPTIVE_FAST "적응형 빠름"
-#define STRING_ADAPTIVE_PRECISION "적응형 정밀"
+#define STRING_ADAPTIVE_FAST "적응형 (빠름)"
+#define STRING_ADAPTIVE_PRECISION "적응형 (정밀)"
 
 // Average menu items
 #define STRING_UNLIMITED "무제한"
-#define STRING_50_CONFIDENCE "±50% 신뢰도"
-#define STRING_20_CONFIDENCE "±20% 신뢰도"
-#define STRING_10_CONFIDENCE "±10% 신뢰도"
-#define STRING_5_CONFIDENCE "±5% 신뢰도"
-#define STRING_2_CONFIDENCE "±2% 신뢰도"
-#define STRING_1_CONFIDENCE "±1% 신뢰도"
+#define STRING_50_CONFIDENCE "±50% 신뢰구간"
+#define STRING_20_CONFIDENCE "±20% 신뢰구간"
+#define STRING_10_CONFIDENCE "±10% 신뢰구간"
+#define STRING_5_CONFIDENCE "±5% 신뢰구간"
+#define STRING_2_CONFIDENCE "±2% 신뢰구간"
+#define STRING_1_CONFIDENCE "±1% 신뢰구간"
 
 // Geiger tube menu items
 #define STRING_TUBE_TYPE "튜브 유형"
@@ -208,7 +208,7 @@
 #define STRING_RESET "초기화"
 
 // Data log options menu items
-#define STRING_EVERY_HOUR "매시간"
+#define STRING_EVERY_HOUR "1시간마다"
 #define STRING_EVERY10_MINUTES "10분마다"
 #define STRING_EVERY_MINUTE "1분마다"
 #define STRING_EVERY10_SECONDS "10초마다"
@@ -218,7 +218,7 @@
 #define STRING_THEME "테마"
 #define STRING_BRIGHTNESS "밝기"
 #define STRING_CONTRAST "대비"
-#define STRING_SLEEP "절전"
+#define STRING_SLEEP "화면 꺼짐"
 
 // Display theme menu items
 #define STRING_THEME_DAY "낮"
@@ -240,17 +240,17 @@
 #define STRING_VOICEVOLUME "음성 음량"
 
 // Sound alert style menu items
-#define STRING_SHORT "짧은"
-#define STRING_LONG "긴"
+#define STRING_SHORT "짧게"
+#define STRING_LONG "길게"
 
 // Sound pulses menu items
-#define STRING_CLICKS "클릭"
-#define STRING_CHIRPS "짹짹"
-#define STRING_BEEPS "삐"
+#define STRING_CLICKS "클릭음"
+#define STRING_CHIRPS "처프음"
+#define STRING_BEEPS "비프음"
 
 // Time and date menu items
 #define STRING_TIME_ZONE "시간대"
-#define STRING_YEAR "년"
+#define STRING_YEAR "연도"
 #define STRING_MONTH "월"
 #define STRING_DAY "일"
 #define STRING_HOUR "시"
@@ -266,20 +266,20 @@
 #define STRING_PM "PM"
 
 // Time format menu items
-#define STRING_24_HOUR "24시간"
-#define STRING_12_HOUR "12시간"
+#define STRING_24_HOUR "24시간제"
+#define STRING_12_HOUR "12시간제"
 
 // Power menu items
 #define STRING_BATTERY "배터리"
 #define STRING_USB_AUTOPOWER_ON "USB 자동 전원 켜기"
 
 // Battery type menu items
-#define STRING_NI_MH "니켈-금속수소"
+#define STRING_NI_MH "Ni-MH"
 #define STRING_ALKALINE "알카라인"
 
 // Random generator menu items
 #define STRING_ASCII "ASCII"
-#define STRING_ALPHANUMERIC "알파벳+숫자"
+#define STRING_ALPHANUMERIC "영숫자"
 #define STRING_HEXADECIMAL "16진수"
 #define STRING_DECIMAL "10진수"
 #define STRING_BINARY "2진수"
@@ -293,8 +293,8 @@
 #define STRING_COIN_FLIP "동전 던지기 (0-1)"
 
 // Game menu items
-#define STRING_PLAY_WHITE "흰색 플레이"
-#define STRING_PLAY_BLACK "검은색 플레이"
+#define STRING_PLAY_WHITE "백으로 두기"
+#define STRING_PLAY_BLACK "흑으로 두기"
 #define STRING_CONTINUE_GAME "게임 계속"
 #define STRING_NEW_GAME "새 게임"
 #define STRING_STRENGTH "난이도"
@@ -307,6 +307,6 @@
 #define STRING_TUBE "튜브"
 #define STRING_LIFE "수명"
 #define STRING_DEAD_TIME "데드 타임"
-#define STRING_DEVICE_ID "장치 ID"
+#define STRING_DEVICE_ID "기기 ID"
 #define STRING_DEVICE "기기"
 #define STRING_ID "ID"
