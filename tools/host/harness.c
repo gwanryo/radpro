@@ -164,6 +164,17 @@ static void drawOverview(void)
 
 static const char *averagingString;
 
+static char zeroValue[16];
+static char zeroUnit[16];
+
+static void makeZeroValue(void)
+{
+    strclr(zeroValue);
+    strclr(zeroUnit);
+    strcatMetricValue(zeroValue, zeroUnit, 0, -2);
+    strcat(zeroUnit, "Sv/h");
+}
+
 static OverviewPage1 page1;
 static float page1Bar;
 
@@ -359,7 +370,8 @@ int main(void)
     render("overview-cpm", drawOverview);
 
     settings.displayTheme = DISPLAY_THEME_DAY;
-    ov = (typeof(ov)){"0.000", "\xc2\xb5Sv/h", 0, MEASUREMENTSTYLE_NORMAL,
+    makeZeroValue();
+    ov = (typeof(ov)){zeroValue, zeroUnit, 0, MEASUREMENTSTYLE_NORMAL,
                       "0.128", " \xc2\xb5Sv/h", "1.284", " \xc2\xb5Sv", "0.317", " \xc2\xb5Sv/h", -1};
     render("overview-fault", drawOverview);
 
@@ -384,7 +396,7 @@ int main(void)
                       "11.13 05:13", "10:01:12");
     render("page1-alarm", drawPage1Case);
 
-    page1 = makePage1("0.000", "\xc2\xb5Sv/h", "", MEASUREMENTSTYLE_NORMAL,
+    page1 = makePage1(zeroValue, zeroUnit, "", MEASUREMENTSTYLE_NORMAL,
                       "0.128", "\xc2\xb5Sv/h", "0.317", "\xc2\xb5Sv/h", "1.284", "\xc2\xb5Sv", MEASUREMENTSTYLE_NORMAL,
                       "11.13 05:13", "10:01:12");
     page1.faultString = getString(STRING_ALERT_FAULT);
@@ -439,12 +451,13 @@ int main(void)
     render("page2-1week", drawPage2Case);
 
     memset(page2LogValues, 0, sizeof(page2LogValues));
-    page2 = makePage2("\xc2\xb5Sv/h", "0.000", MEASUREMENTSTYLE_NORMAL, "0.000", "cpm", "0.0", "0:00:00", "");
+    page2 = makePage2(zeroUnit, zeroValue, MEASUREMENTSTYLE_NORMAL, zeroValue, "cpm", zeroValue, "0:00:00", "");
     page2Graph = makeGraph(0.5E-6F, 0, 10, getString(STRING_HISTORY_10_MINUTES), getString(STRING_HISTORY_HALF_10_MINUTES));
     render("page2-nodata", drawPage2Case);
 
     makeMockupLogValues(7, 0.128, 0.317, 0.142, 1E-6);
-    page2 = makePage2("\xc2\xb5Sv/h", "0.000", MEASUREMENTSTYLE_NORMAL, "0.128", "cpm", "0.0", "2:15:40", "\xc2\xb1" "3.8%");
+    page2 = makePage2("\xc2\xb5Sv/h", zeroValue, MEASUREMENTSTYLE_NORMAL, "0.128", "cpm", zeroValue, "2:15:40", "\xc2\xb1" "3.8%");
+    snprintf(page2.instantaneousKey, sizeof(page2.instantaneousKey), "%s %s", getString(STRING_INSTANTANEOUS), zeroUnit);
     page2.faultString = getString(STRING_ALERT_FAULT);
     render("page2-fault", drawPage2Case);
 
