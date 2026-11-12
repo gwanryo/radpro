@@ -10,8 +10,10 @@
 #if !defined(AVERAGE_H)
 #define AVERAGE_H
 
+#if defined(FS5000)
 #include <stdbool.h>
 #include <stdint.h>
+#endif
 
 #include "../measurements/pulses.h"
 #include "../ui/menu.h"

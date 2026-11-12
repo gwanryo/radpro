@@ -156,11 +156,25 @@ uint32_t getCumulativeDoseStartTime(void)
     return cumulativeDoseStartTime;
 }
 
+static bool isDeviceDateValid(void)
+{
+    RTCDateTime dateTime;
+    getDeviceDateTime(&dateTime);
+
+    return dateTime.year >= RTC_YEAR_MIN;
+}
+
+void seedCumulativeDoseStartTime(void)
+{
+    if (!cumulativeDoseStartTime && isDeviceDateValid())
+        cumulativeDoseStartTime = getDeviceTime();
+}
+
 void clearCumulativeDoseValues(void)
 {
     clearCumulativeDose();
 
-    cumulativeDoseStartTime = getDeviceTime();
+    cumulativeDoseStartTime = isDeviceDateValid() ? getDeviceTime() : 0;
 }
 #endif
 

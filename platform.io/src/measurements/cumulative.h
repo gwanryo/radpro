@@ -13,8 +13,10 @@
 #include <stdbool.h>
 
 #include "../measurements/pulses.h"
+#if defined(FS5000)
 #include "../ui/measurements.h"
 #include "../ui/menu.h"
+#endif
 #include "../ui/view.h"
 
 void resetCumulativeDose(void);
@@ -31,6 +33,8 @@ MeasurementStyle getCumulativeDoseStyle(void);
 
 uint32_t getCumulativeDoseStartTime(void);
 void setCumulativeDoseStartTime(uint32_t value);
+
+void seedCumulativeDoseStartTime(void);
 
 void clearCumulativeDoseValues(void);
 

@@ -9,6 +9,7 @@
 
 #include "../extras/game.h"
 #include "../extras/rng.h"
+#include "../measurements/cumulative.h"
 #include "../measurements/datalog.h"
 #include "../measurements/history.h"
 #include "../measurements/measurements.h"
@@ -94,6 +95,9 @@ static void onPowerOnViewEvent(ViewEvent event)
         if (power.onViewState == POWERON_VIEW_SPLASH)
         {
             initRTC();
+#if defined(FS5000)
+            seedCumulativeDoseStartTime();
+#endif
             loadHistory();
         }
 

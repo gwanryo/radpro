@@ -10,7 +10,9 @@
 #if !defined(HISTORY_H)
 #define HISTORY_H
 
+#if defined(FS5000)
 #include <stdint.h>
+#endif
 
 #include "../ui/view.h"
 

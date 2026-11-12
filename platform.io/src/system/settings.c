@@ -212,7 +212,7 @@ void initSettings(void)
     }
 #if defined(FS5000)
     else
-        setCumulativeDoseStartTime(getDeviceTime());
+        setCumulativeDoseStartTime(0);
 #endif
 }
 

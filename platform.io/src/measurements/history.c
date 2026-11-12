@@ -275,9 +275,11 @@ void updateHistory(void)
 #if defined(FS5000)
 void selectHistoryTab(int32_t delta)
 {
-    int32_t tab = ((int32_t)historyTab + delta) % HISTORY_TAB_NUM;
+    int32_t tab = (int32_t)historyTab + (delta % (int32_t)HISTORY_TAB_NUM);
     if (tab < 0)
         tab += HISTORY_TAB_NUM;
+    else if (tab >= (int32_t)HISTORY_TAB_NUM)
+        tab -= HISTORY_TAB_NUM;
 
     historyTab = tab;
 }

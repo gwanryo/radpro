@@ -14,7 +14,9 @@
 
 #include "../measurements/cumulative.h"
 #include "../measurements/pulses.h"
+#if defined(FS5000)
 #include "../ui/measurements.h"
+#endif
 #include "../ui/menu.h"
 #include "../ui/view.h"
 

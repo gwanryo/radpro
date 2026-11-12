@@ -7,6 +7,7 @@
  * License: MIT
  */
 
+#include "../measurements/cumulative.h"
 #include "../measurements/datalog.h"
 #include "../peripherals/rtc.h"
 #include "../system/cmath.h"
@@ -239,6 +240,10 @@ static void onRTCOptionMenuSelect(menu_size_t index)
 
     setDeviceDateTime(&dateTime);
     rtcCurrentDateTime = dateTime;
+
+#if defined(FS5000)
+    seedCumulativeDoseStartTime();
+#endif
 
     writeDatalogTimeChange();
 }
