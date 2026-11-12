@@ -72,6 +72,13 @@ int main(void)
     label_is(0.5f, 0, "0.5");
     char s[16] = "";
     assert(!strcatHistoryAxisLabel(s, 0.0005f, 0) && s[0] == 0);
+    assert(!strcatHistoryAxisLabel(s, 0.0001f, 0) && s[0] == 0);
+    assert(!strcatHistoryAxisLabel(s, 5e-5f, 0) && s[0] == 0);
+    label_is(0.0f, 0, "0");
+
+    assert(buildHistoryAxis(0, 0.128e-6f, 0, 176, &a));
+    expect_lines(&a, (float[]){0.1e-6f, 0.2e-6f}, 2);
+    assert(getHistoryAxisY(&(HistoryAxis){0.1f, 10.0f, 0, {0}}, 1.0f, 176) == 88);
 
     return 0;
 }

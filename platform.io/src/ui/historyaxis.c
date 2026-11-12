@@ -123,7 +123,7 @@ int32_t getHistoryAxisY(const HistoryAxis *axis, float value, int32_t height)
 
 int32_t getHistoryAxisPrefixExponent(float top, int32_t minExponent)
 {
-    int32_t exponent = 3 * (int32_t)floor(log10((double)top) / 3 + AXIS_EPSILON);
+    int32_t exponent = 3 * (int32_t)floorf(log10f(top) / 3 + AXIS_EPSILON);
 
     return (exponent > minExponent) ? exponent : minExponent;
 }
@@ -133,7 +133,7 @@ bool strcatHistoryAxisLabel(char *s, float value, int32_t prefixExponent)
     if (value < 0)
         return false;
 
-    double scaled = (double)value / pow(10.0, prefixExponent);
+    float scaled = value / powf(10.0F, (float)prefixExponent);
 
     uint32_t scale = 1;
     uint32_t digits = 0;
@@ -141,10 +141,13 @@ bool strcatHistoryAxisLabel(char *s, float value, int32_t prefixExponent)
     bool found = false;
     for (digits = 0; digits <= 3; digits++)
     {
-        double rounded = floor(scaled * scale + 0.5);
-        double tolerance = AXIS_EPSILON * (rounded > 1 ? rounded : 1);
-        if (fabs(scaled * scale - rounded) <= tolerance &&
-            rounded < 1e9)
+        float product = scaled * (float)scale;
+        float rounded = floorf(product + 0.5F);
+        bool match = (rounded > 0)
+                         ? (fabsf(product - rounded) <= AXIS_EPSILON * rounded)
+                         : (product == 0);
+        if (match &&
+            rounded < 1e9F)
         {
             number = (uint32_t)rounded;
             found = true;
