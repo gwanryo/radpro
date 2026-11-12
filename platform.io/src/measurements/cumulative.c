@@ -43,6 +43,7 @@ static CumulativeTab cumulativeTab;
 
 #if defined(FS5000)
 static uint32_t cumulativeDoseStartTime;
+static bool cumulativeDoseStartTimeProvisional;
 #endif
 
 void resetCumulativeDose(void)
@@ -170,11 +171,23 @@ void seedCumulativeDoseStartTime(void)
         cumulativeDoseStartTime = getDeviceTime();
 }
 
+void updateCumulativeDoseStartTime(uint32_t previousDeviceTime)
+{
+    if (cumulativeDoseStartTimeProvisional)
+        cumulativeDoseStartTime += getDeviceTime() - previousDeviceTime;
+    else if (!cumulativeDoseStartTime && isDeviceDateValid())
+    {
+        cumulativeDoseStartTime = getDeviceTime();
+        cumulativeDoseStartTimeProvisional = true;
+    }
+}
+
 void clearCumulativeDoseValues(void)
 {
     clearCumulativeDose();
 
     cumulativeDoseStartTime = isDeviceDateValid() ? getDeviceTime() : 0;
+    cumulativeDoseStartTimeProvisional = false;
 }
 #endif
 
@@ -338,6 +351,7 @@ static void onCumulativeDoseResetAlertEvent(ViewEvent event)
 
     case EVENT_KEY_SELECT:
         clearCumulativeDoseValues();
+        saveSettings();
 
         showView(onCumulativeDoseResetConfirmationEvent);
 

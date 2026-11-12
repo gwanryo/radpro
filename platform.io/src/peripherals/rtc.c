@@ -212,6 +212,10 @@ static const char *onRTCOptionMenuGetOption(menu_size_t index, MenuStyle *menuSt
 
 static void onRTCOptionMenuSelect(menu_size_t index)
 {
+#if defined(FS5000)
+    uint32_t previousDeviceTime = getDeviceTime();
+
+#endif
     RTCDateTime dateTime;
     getDeviceDateTime(&dateTime);
     normalizeDateTime(&dateTime);
@@ -249,7 +253,7 @@ static void onRTCOptionMenuSelect(menu_size_t index)
     rtcCurrentDateTime = dateTime;
 
 #if defined(FS5000)
-    seedCumulativeDoseStartTime();
+    updateCumulativeDoseStartTime(previousDeviceTime);
 #endif
 
     writeDatalogTimeChange();
