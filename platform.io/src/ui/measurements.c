@@ -343,6 +343,8 @@ static int16_t getMeasurementBarX(float value, float offset)
     return BAR_FRAME_LEFT + x;
 }
 
+#if defined(FS5000)
+#define BAR_STANDARD_ARGS , BAR_LABEL_HEIGHT, BAR_LABEL_OFFSETY, TICKS_SPACING, MEASUREMENT_PADDING_BOTTOM
 static void drawMeasurementBarAt(int16_t top, float value, int32_t minExponent, float warningValue, float alarmValue,
                                  int16_t labelHeight, int16_t labelOffsetY, int16_t tickSpacing, int16_t paddingBottom)
 {
@@ -350,6 +352,17 @@ static void drawMeasurementBarAt(int16_t top, float value, int32_t minExponent, 
     const int16_t contentTop = frameTop + 1;
     const int16_t frameBottom = frameTop + BAR_FRAME_HEIGHT;
     const int16_t bufferHeight = frameBottom + paddingBottom;
+#else
+#define BAR_STANDARD_ARGS
+static void drawMeasurementBarAt(int16_t top, float value, int32_t minExponent, float warningValue, float alarmValue)
+{
+    const int16_t labelHeight = BAR_LABEL_HEIGHT;
+    const int16_t labelOffsetY = BAR_LABEL_OFFSETY;
+    const int16_t frameTop = BAR_FRAME_TOP;
+    const int16_t contentTop = BAR_CONTENT_TOP;
+    const int16_t frameBottom = BAR_FRAME_BOTTOM;
+    const int16_t bufferHeight = BAR_IMAGEBUFFER_HEIGHT;
+#endif
 
     // Pre-calculations
     const LabelSpan *labelSpansTicks;
@@ -478,7 +491,7 @@ static void drawMeasurementBarAt(int16_t top, float value, int32_t minExponent, 
 
 void drawMeasurementBar(float value, int32_t minExponent, float warningValue, float alarmValue)
 {
-    drawMeasurementBarAt(BAR_TOP, value, minExponent, warningValue, alarmValue, BAR_LABEL_HEIGHT, BAR_LABEL_OFFSETY, TICKS_SPACING, MEASUREMENT_PADDING_BOTTOM);
+    drawMeasurementBarAt(BAR_TOP, value, minExponent, warningValue, alarmValue BAR_STANDARD_ARGS);
 }
 
 #if defined(DISPLAY_240X320)
@@ -534,7 +547,7 @@ void drawMeasurementOverviewValue(const char *valueString, const char *unitStrin
 
 void drawMeasurementOverviewBar(float value, int32_t minExponent, float warningValue, float alarmValue)
 {
-    drawMeasurementBarAt(OVERVIEW_BAR_TOP, value, minExponent, warningValue, alarmValue, BAR_LABEL_HEIGHT, BAR_LABEL_OFFSETY, TICKS_SPACING, MEASUREMENT_PADDING_BOTTOM);
+    drawMeasurementBarAt(OVERVIEW_BAR_TOP, value, minExponent, warningValue, alarmValue BAR_STANDARD_ARGS);
 }
 
 #if defined(FS5000)
