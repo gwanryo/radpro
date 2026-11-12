@@ -51,10 +51,8 @@ static void drawTitleBarIcon(const char *text, mr_rectangle_t *rectangle)
     drawTitleBarItem(text, 0, rectangle);
 }
 
-static void drawTitleBarIcons(mr_rectangle_t *rectangle)
+static void setupTitleBar(mr_rectangle_t *rectangle)
 {
-    char buffer[16];
-
     *rectangle = (mr_rectangle_t){
         TITLEBAR_WIDTH,
         TITLEBAR_TOP,
@@ -62,6 +60,11 @@ static void drawTitleBarIcons(mr_rectangle_t *rectangle)
         TITLEBAR_CONTENT_HEIGHT,
     };
     setFillColor(COLOR_CONTAINER_GLOBAL);
+}
+
+static void drawTitleBarIcons(mr_rectangle_t *rectangle)
+{
+    char buffer[16];
 
     setupBatteryIcon(buffer);
     setFont(font_symbols_small);
@@ -127,15 +130,18 @@ void drawTitleBar(const char *title)
     char buffer[16];
     mr_rectangle_t rectangle;
 
-    drawTitleBarIcons(&rectangle);
+    setupTitleBar(&rectangle);
 
     setFont(font_tiny);
     if (setupTimeString(buffer))
     {
         setStrokeColor(COLOR_ELEMENT_ACTIVE);
-        drawTitleBarItem(buffer, TITLEBAR_TIME_GAP, &rectangle);
+        drawTitleBarItem(buffer, 0, &rectangle);
     }
 
+    drawTitleBarIcons(&rectangle);
+
+    setFont(font_tiny);
     setStrokeColor(COLOR_ELEMENT_ACTIVE);
     drawRowLeft(title, &rectangle);
 
@@ -147,6 +153,7 @@ void drawMeasurementTitleBar(const char *averagingString)
     char buffer[16];
     mr_rectangle_t rectangle;
 
+    setupTitleBar(&rectangle);
     drawTitleBarIcons(&rectangle);
 
     setFont(font_tiny);

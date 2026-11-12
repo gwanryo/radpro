@@ -162,6 +162,11 @@ static void drawOverview(void)
 
 static const char *averagingString;
 
+static void drawPlainTitleCase(void)
+{
+    drawTitleBar(getString(STRING_NOTIFICATION_CUMULATIVE_RESET_CONFIRM));
+}
+
 static void drawTitleBarCase(void)
 {
     drawMeasurementTitleBar(averagingString);
@@ -266,6 +271,15 @@ int main(void)
     averagingString = getString(STRING_ADAPTIVE_FAST);
     renderRegion("titlebar-nortc", drawTitleBarCase, 24);
     rtcSet = true;
+    settings.rtcTimeFormat = RTC_TIMEFORMAT_12_HOUR;
+    renderRegion("titlebar-12h", drawTitleBarCase, 24);
+    settings.rtcTimeFormat = RTC_TIMEFORMAT_24_HOUR;
+    iconsAll = true;
+    averagingString = "Adaptive (precision) 10 seconds long";
+    renderRegion("titlebar-omit", drawTitleBarCase, 24);
+    iconsAll = true;
+    renderRegion("titlebar-plain-icons", drawPlainTitleCase, 24);
+    iconsAll = false;
 
     render("menu-settings", drawMenuCase);
     render("statistics", drawStatistics);
