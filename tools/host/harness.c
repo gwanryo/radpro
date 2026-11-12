@@ -242,14 +242,14 @@ static void makeMockupLogValues(uint32_t seed, double center, double peak, doubl
     }
 }
 
-static OverviewPage2 makePage2(const char *prefix, const char *inst, MeasurementStyle instStyle, const char *avg,
+static OverviewPage2 makePage2(const char *unit, const char *inst, MeasurementStyle instStyle, const char *avg,
                                const char *secondaryKey, const char *secondary, const char *avgTime, const char *confidence)
 {
     OverviewPage2 page = {0};
-    snprintf(page.instantaneousKey, sizeof(page.instantaneousKey), "%s %sSv/h", getString(STRING_INSTANTANEOUS), prefix);
+    snprintf(page.instantaneousKey, sizeof(page.instantaneousKey), "%s %s", getString(STRING_INSTANTANEOUS), unit);
     strcpy(page.instantaneousValue, inst);
     page.instantaneousStyle = instStyle;
-    snprintf(page.averageKey, sizeof(page.averageKey), "%s %sSv/h", getString(STRING_AVERAGE), prefix);
+    snprintf(page.averageKey, sizeof(page.averageKey), "%s %s", getString(STRING_AVERAGE), unit);
     strcpy(page.averageValue, avg);
     page.averageStyle = MEASUREMENTSTYLE_NORMAL;
     strcpy(page.secondaryKey, secondaryKey);
@@ -417,7 +417,7 @@ int main(void)
 
     averagingString = getString(STRING_ADAPTIVE_FAST);
     makeMockupLogValues(7, 0.128, 0.317, 0.142, 1E-6);
-    page2 = makePage2("\xc2\xb5", "0.142", MEASUREMENTSTYLE_NORMAL, "0.128", "cpm", "21.8", "2:15:40", "\xc2\xb1" "3.8%");
+    page2 = makePage2("\xc2\xb5Sv/h", "0.142", MEASUREMENTSTYLE_NORMAL, "0.128", "cpm", "21.8", "2:15:40", "\xc2\xb1" "3.8%");
     page2Graph = makeGraph(0.5E-6F, 0, 10, getString(STRING_HISTORY_10_MINUTES), getString(STRING_HISTORY_HALF_10_MINUTES));
     render("page2-10min", drawPage2Case);
 
@@ -430,20 +430,28 @@ int main(void)
     render("page2-1week", drawPage2Case);
 
     memset(page2LogValues, 0, sizeof(page2LogValues));
-    page2 = makePage2("\xc2\xb5", "0.000", MEASUREMENTSTYLE_NORMAL, "0.000", "cpm", "0.0", "0:00:00", "");
+    page2 = makePage2("\xc2\xb5Sv/h", "0.000", MEASUREMENTSTYLE_NORMAL, "0.000", "cpm", "0.0", "0:00:00", "");
     page2Graph = makeGraph(0.5E-6F, 0, 10, getString(STRING_HISTORY_10_MINUTES), getString(STRING_HISTORY_HALF_10_MINUTES));
     render("page2-nodata", drawPage2Case);
 
     makeMockupLogValues(7, 0.128, 0.317, 0.142, 1E-6);
-    page2 = makePage2("\xc2\xb5", "0.000", MEASUREMENTSTYLE_NORMAL, "0.128", "cpm", "0.0", "2:15:40", "\xc2\xb1" "3.8%");
+    page2 = makePage2("\xc2\xb5Sv/h", "0.000", MEASUREMENTSTYLE_NORMAL, "0.128", "cpm", "0.0", "2:15:40", "\xc2\xb1" "3.8%");
     page2.faultString = getString(STRING_ALERT_FAULT);
     render("page2-fault", drawPage2Case);
 
     makeMockupLogValues(7, 3.2, 9.5, 12.47, 1E-3);
-    page2 = makePage2("m", "12.47", MEASUREMENTSTYLE_ALARM, "3.906", "kcpm", "1918", "0:12:05", "\xc2\xb1" "0.5%");
+    page2 = makePage2("mSv/h", "12.47", MEASUREMENTSTYLE_ALARM, "3.906", "kcpm", "1918", "0:12:05", "\xc2\xb1" "0.5%");
     page2.averageStyle = MEASUREMENTSTYLE_WARNING;
     page2Graph = makeGraph(5E-3F, 10E-3F, 10, getString(STRING_HISTORY_10_MINUTES), getString(STRING_HISTORY_HALF_10_MINUTES));
     render("page2-big", drawPage2Case);
+
+    makeMockupLogValues(7, 0.128, 0.16, 0.142, 1E-3);
+    page2 = makePage2("mrem/h", "14.20", MEASUREMENTSTYLE_NORMAL, "12.80", "kcpm", "1.538", "2:15:40", "\xc2\xb1" "3.8%");
+    page2Graph = makeGraph(0, 0, 10, getString(STRING_HISTORY_10_MINUTES), getString(STRING_HISTORY_HALF_10_MINUTES));
+    page2Graph.scale = PAGE2_SCALE * 100;
+    page2Graph.unitName = "rem/h";
+    page2Graph.minPrefixExponent = -3;
+    render("page2-rem", drawPage2Case);
 
     settings.displayTheme = DISPLAY_THEME_DAY;
     averagingString = getString(STRING_ADAPTIVE_FAST);

@@ -46,7 +46,7 @@
 #define CELL_VALUE_TEXTTOP 47
 #define CELL_BOTTOM 78
 #define CELL_MIDDLE_LEFT 96
-#define CELL_GAP 6
+#define CELL_GAP 8
 
 #define INFO_TOP CELL_BOTTOM
 #define INFO_BOTTOM 100
@@ -72,7 +72,10 @@
 #define GRAPH_GRID_DASH 2
 #define GRAPH_ALERT_DASH 4
 #define GRAPH_ALERT_PERIOD 7
-#define GRAPH_DOT_RIGHT 2
+#define GRAPH_UNIT_EXTRA 4
+#define GRAPH_DOT_HALO_RADIUS ((int32_t)(sizeof(graphDotHalo) / 2))
+#define GRAPH_DOT_RADIUS ((int32_t)(sizeof(graphDot) / 2))
+#define GRAPH_DOT_BIN (GRAPH_WIDTH - 2 - GRAPH_DOT_HALO_RADIUS)
 #define GRAPH_MARGIN ((uint8_t)(0.1F * HISTORY_DECADE))
 
 #define AXIS_TOP GRAPH_REGION_BOTTOM
@@ -298,24 +301,53 @@ static void drawCell(const char *key, const char *value, ColorIndex valueColorIn
          &(mr_point_t){offsetX, CELL_VALUE_TEXTTOP - CELL_VALUE_TOP});
 }
 
+static int16_t getCellWidth(const char *key, const char *value)
+{
+    setFont(font_tiny);
+    int16_t width = getTextWidth(key);
+    setFont(font_small);
+    int16_t valueWidth = getTextWidth(value);
+
+    return (valueWidth > width) ? valueWidth : width;
+}
+
+static const char *getCellUnitKey(const char *key)
+{
+    const char *unit = strrchr(key, ' ');
+
+    return unit ? unit + 1 : key;
+}
+
 static void drawCells(const OverviewPage2 *page)
 {
+    const char *instantaneousKey = page->instantaneousKey;
+    const char *averageKey = page->averageKey;
+
+    int16_t leftWidth = getCellWidth(instantaneousKey, page->instantaneousValue);
+    int16_t middleWidth = getCellWidth(averageKey, page->averageValue);
+    int16_t rightWidth = getCellWidth(page->secondaryKey, page->secondaryValue);
+    if (leftWidth + middleWidth + rightWidth + 2 * CELL_GAP > CONTENT_MULTILINE_WIDTH)
+    {
+        instantaneousKey = getCellUnitKey(instantaneousKey);
+        averageKey = getCellUnitKey(averageKey);
+        leftWidth = getCellWidth(instantaneousKey, page->instantaneousValue);
+        middleWidth = getCellWidth(averageKey, page->averageValue);
+    }
+
+    int16_t rightLeft = DISPLAY_WIDTH - PADDING_RIGHT - rightWidth;
+    int16_t middleLeft = CELL_MIDDLE_LEFT;
+    if (middleLeft + middleWidth + CELL_GAP > rightLeft)
+        middleLeft = rightLeft - CELL_GAP - middleWidth;
+    if (middleLeft < PADDING_LEFT + leftWidth + CELL_GAP)
+        middleLeft = PADDING_LEFT + leftWidth + CELL_GAP;
+    if (rightLeft < middleLeft)
+        rightLeft = middleLeft;
+
     setFillColor(COLOR_CONTAINER_BACKGROUND);
-
-    setFont(font_tiny);
-    int16_t width = getTextWidth(page->secondaryKey);
-    setFont(font_small);
-    int16_t valueWidth = getTextWidth(page->secondaryValue);
-    if (valueWidth > width)
-        width = valueWidth;
-    int16_t rightLeft = DISPLAY_WIDTH - PADDING_RIGHT - CELL_GAP - width;
-    if (rightLeft < CELL_MIDDLE_LEFT)
-        rightLeft = CELL_MIDDLE_LEFT;
-
-    drawCell(page->instantaneousKey, page->instantaneousValue, getValueColorIndex(page->instantaneousStyle),
-             0, CELL_MIDDLE_LEFT, PADDING_LEFT, drawText);
-    drawCell(page->averageKey, page->averageValue, getRowColorIndex(page->averageStyle),
-             CELL_MIDDLE_LEFT, rightLeft - CELL_MIDDLE_LEFT, 0, drawText);
+    drawCell(instantaneousKey, page->instantaneousValue, getValueColorIndex(page->instantaneousStyle),
+             0, middleLeft, PADDING_LEFT, drawText);
+    drawCell(averageKey, page->averageValue, getRowColorIndex(page->averageStyle),
+             middleLeft, rightLeft - middleLeft, 0, drawText);
     drawCell(page->secondaryKey, page->secondaryValue, COLOR_ELEMENT_ACTIVE,
              rightLeft, DISPLAY_WIDTH - rightLeft, DISPLAY_WIDTH - rightLeft - PADDING_RIGHT, drawRightAlignedText);
 }
@@ -386,12 +418,23 @@ static void addGraphLabel(GraphLabels *labels, const char *text, ColorIndex colo
              &(mr_point_t){GRAPH_LABEL_PADDING, baseline - FONT_TINY_ASCENT - top});
 }
 
+static int32_t getGraphY(const HistoryAxis *axis, float value)
+{
+    int32_t y = getHistoryAxisY(axis, value, GRAPH_HEIGHT);
+    if (y < 0)
+        y = 0;
+    else if (y > GRAPH_HEIGHT - 1)
+        y = GRAPH_HEIGHT - 1;
+
+    return y;
+}
+
 static int32_t getGraphZoneY(const HistoryAxis *axis, float value)
 {
     if ((value <= 0) || (value > axis->top))
         return -1;
 
-    return getHistoryAxisY(axis, value, GRAPH_HEIGHT);
+    return getGraphY(axis, value);
 }
 
 static int32_t getGraphLineY(const HistoryAxis *axis, float value)
@@ -399,7 +442,34 @@ static int32_t getGraphLineY(const HistoryAxis *axis, float value)
     if ((value <= axis->bottom) || (value >= axis->top))
         return -1;
 
-    return getHistoryAxisY(axis, value, GRAPH_HEIGHT);
+    return getGraphY(axis, value);
+}
+
+static int32_t getGraphDotY(const OverviewGraph *graph, const HistoryAxis *axis)
+{
+    uint8_t lastValue = graph->logValues[GRAPH_WIDTH - 1];
+    if (!lastValue)
+        return -1;
+
+    int32_t y = getGraphY(axis, getHistoryValueFromLog(lastValue, graph->scale));
+    if (y < 1 + GRAPH_DOT_HALO_RADIUS)
+        y = 1 + GRAPH_DOT_HALO_RADIUS;
+    else if (y > GRAPH_HEIGHT - 2 - GRAPH_DOT_HALO_RADIUS)
+        y = GRAPH_HEIGHT - 2 - GRAPH_DOT_HALO_RADIUS;
+
+    return y;
+}
+
+static void addGraphAlertLabel(GraphLabels *labels, const char *text, ColorIndex colorIndex, int32_t lineY, int32_t dotY)
+{
+    int32_t baseline = lineY - GRAPH_LABEL_BASELINE_GAP;
+    int16_t right = GRAPH_LEFT + GRAPH_WIDTH - GRAPH_LABEL_RIGHT;
+    if ((dotY >= 0) &&
+        (dotY + GRAPH_DOT_HALO_RADIUS >= baseline - GRAPH_LABEL_ASCENT) &&
+        (dotY - GRAPH_DOT_HALO_RADIUS < baseline + GRAPH_LABEL_DESCENT))
+        right = GRAPH_LEFT + GRAPH_DOT_BIN - GRAPH_DOT_HALO_RADIUS - GRAPH_LABEL_PADDING;
+
+    addGraphLabel(labels, text, colorIndex, right, baseline, true);
 }
 
 static void drawGraphLabels(const OverviewGraph *graph, const HistoryAxis *axis, GraphLabels *labels)
@@ -418,35 +488,36 @@ static void drawGraphLabels(const OverviewGraph *graph, const HistoryAxis *axis,
         strclr(text);
         if (!strcatHistoryAxisLabel(text, value, prefixExponent))
             continue;
-        if (isTop)
+        if (isTop &&
+            (strlen(text) + strlen(graph->unitName) + GRAPH_UNIT_EXTRA <= sizeof(text)))
         {
             strcat(text, " ");
             strcatMetricPrefixFromExponent(text, prefixExponent);
             strcat(text, graph->unitName);
         }
 
-        int32_t y = getHistoryAxisY(axis, value, GRAPH_HEIGHT);
+        int32_t y = getGraphY(axis, value);
         addGraphLabel(labels, text, COLOR_ELEMENT_NEUTRAL,
                       GRAPH_LEFT + GRAPH_LABEL_LEFT,
                       isTop ? y + GRAPH_TOP_LABEL_BASELINE : y - GRAPH_LABEL_BASELINE_GAP,
                       false);
     }
 
+    int32_t dotY = getGraphDotY(graph, axis);
+
     int32_t warningY = getGraphLineY(axis, graph->warningValue);
     if (warningY >= 0)
-        addGraphLabel(labels, getString(STRING_WARNING), COLOR_WARNING,
-                      GRAPH_LEFT + GRAPH_WIDTH - GRAPH_LABEL_RIGHT, warningY - GRAPH_LABEL_BASELINE_GAP, true);
+        addGraphAlertLabel(labels, getString(STRING_WARNING), COLOR_WARNING, warningY, dotY);
 
     int32_t alarmY = getGraphLineY(axis, graph->alarmValue);
     if (alarmY >= 0)
-        addGraphLabel(labels, getString(STRING_ALARM), COLOR_ALARM,
-                      GRAPH_LEFT + GRAPH_WIDTH - GRAPH_LABEL_RIGHT, alarmY - GRAPH_LABEL_BASELINE_GAP, true);
+        addGraphAlertLabel(labels, getString(STRING_ALARM), COLOR_ALARM, alarmY, dotY);
 }
 
 static void setGraphPixels(mr_color_t *column, int32_t y, int32_t halfHeight, mr_color_t color)
 {
     for (int32_t i = y - halfHeight; i <= y + halfHeight; i++)
-        if ((i >= -GRAPH_OFFSETY) && (i < GRAPH_REGION_HEIGHT - GRAPH_OFFSETY))
+        if ((i >= 1) && (i < GRAPH_HEIGHT - 1))
             column[i] = color;
 }
 
@@ -516,7 +587,7 @@ static void drawGraphColumns(const OverviewGraph *graph, const HistoryAxis *axis
     {
         gridNum = axis->lineNum;
         for (uint32_t i = 0; i < gridNum; i++)
-            gridYs[i] = getHistoryAxisY(axis, axis->lineValues[i], GRAPH_HEIGHT);
+            gridYs[i] = getGraphY(axis, axis->lineValues[i]);
 
         warningZoneY = getGraphZoneY(axis, graph->warningValue);
         alarmZoneY = getGraphZoneY(axis, graph->alarmValue);
@@ -524,10 +595,7 @@ static void drawGraphColumns(const OverviewGraph *graph, const HistoryAxis *axis
             warningZoneY = alarmZoneY;
         warningLineY = getGraphLineY(axis, graph->warningValue);
         alarmLineY = getGraphLineY(axis, graph->alarmValue);
-
-        uint8_t lastValue = graph->logValues[GRAPH_WIDTH - 1];
-        if (lastValue)
-            dotY = getHistoryAxisY(axis, getHistoryValueFromLog(lastValue, graph->scale), GRAPH_HEIGHT);
+        dotY = getGraphDotY(graph, axis);
     }
 
     mr_color_t line[GRAPH_REGION_HEIGHT];
@@ -557,7 +625,7 @@ static void drawGraphColumns(const OverviewGraph *graph, const HistoryAxis *axis
             if (axis)
             {
                 uint8_t logValue = graph->logValues[bin];
-                int32_t y = getHistoryAxisY(axis, getHistoryValueFromLog(logValue, graph->scale), GRAPH_HEIGHT);
+                int32_t y = getGraphY(axis, getHistoryValueFromLog(logValue, graph->scale));
                 if (bin == 0)
                     previousY = y;
                 if (logValue || previousData)
@@ -578,7 +646,7 @@ static void drawGraphColumns(const OverviewGraph *graph, const HistoryAxis *axis
                         if ((gridYs[i] != warningLineY) && (gridYs[i] != alarmLineY))
                             column[gridYs[i]] = tickColor;
 
-                if (((bin - 1) % GRAPH_ALERT_PERIOD) < GRAPH_ALERT_DASH)
+                if (((bin + GRAPH_ALERT_PERIOD - 1) % GRAPH_ALERT_PERIOD) < GRAPH_ALERT_DASH)
                 {
                     if (warningLineY >= 0)
                         column[warningLineY] = warningColor;
@@ -592,22 +660,20 @@ static void drawGraphColumns(const OverviewGraph *graph, const HistoryAxis *axis
                     column[y] = frameLineColor;
             column[0] = frameLineColor;
             column[GRAPH_HEIGHT - 1] = frameLineColor;
+
+            if (dotY >= 0)
+            {
+                int32_t dx = bin - GRAPH_DOT_BIN;
+                if ((dx >= -GRAPH_DOT_HALO_RADIUS) && (dx <= GRAPH_DOT_HALO_RADIUS))
+                    setGraphPixels(column, dotY, graphDotHalo[dx + GRAPH_DOT_HALO_RADIUS], frameColor);
+                if ((dx >= -GRAPH_DOT_RADIUS) && (dx <= GRAPH_DOT_RADIUS))
+                    setGraphPixels(column, dotY, graphDot[dx + GRAPH_DOT_RADIUS], dotColor);
+            }
         }
         else if ((x >= GRAPH_TICKS_LEFT) && (x < GRAPH_TICKS_LEFT + TICKS_LONG))
         {
             for (uint32_t i = 0; i < gridNum; i++)
                 column[gridYs[i]] = tickColor;
-        }
-
-        if (dotY >= 0)
-        {
-            int32_t dx = x - (GRAPH_LEFT + GRAPH_WIDTH - GRAPH_DOT_RIGHT);
-            int32_t haloRadius = sizeof(graphDotHalo) / 2;
-            int32_t dotRadius = sizeof(graphDot) / 2;
-            if ((dx >= -haloRadius) && (dx <= haloRadius))
-                setGraphPixels(column, dotY, graphDotHalo[dx + haloRadius], frameColor);
-            if ((dx >= -dotRadius) && (dx <= dotRadius))
-                setGraphPixels(column, dotY, graphDot[dx + dotRadius], dotColor);
         }
 
         drawGraphColumn(x, line, labels);
