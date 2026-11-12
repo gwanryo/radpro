@@ -12,7 +12,7 @@ rm -f "$OUT"/*.ppm "$OUT"/*.png
 gcc -std=gnu11 -O1 -w -DSIMULATOR -DFS5000 -DDISPLAY_COLOR -DDISPLAY_240X320 -DKEYBOARD_3_KEYS \
     -DBUZZER -DVIBRATOR -DPULSE_LED -DALERT_LED -DGAME -DLANGUAGE='"ko"' \
     -DSTRINGS='"strings/ko.h"' \
-    -DFONT_SMALL='"fonts/font_small_ko_color_21.h"' \
+    -DFONT_SMALL='"fonts/font_small_ko_fs5000_color_21.h"' \
     -DFONT_MEDIUM='"fonts/font_medium_ko_color_32.h"' \
     -DFONT_LARGE='"fonts/font_large_color_84.h"' \
     -DFONT_SYMBOLS='"fonts/font_symbols_color.h"' \

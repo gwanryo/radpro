@@ -31,7 +31,7 @@ def build_env(env_name,
               font_small, font_medium, font_large, font_symbols,
               font_low,
               firmware_size_regular, firmware_size_cgv, firmware_size_cjk,
-              languages=None, extra_flags=None):
+              languages=None, extra_flags=None, font_small_file=None):
     env = []
 
     # Get list of language header files
@@ -79,7 +79,8 @@ def build_env(env_name,
         env += [f'    -DFIRMWARE_SIZE={firmware_size}\n']
         env += [f'    -DLANGUAGE=\'"{language}"\'\n']
         env += [f'    -DSTRINGS=\'"strings/{language}.h"\'\n']
-        env += [f'    -DFONT_SMALL=\'"fonts/font_small_{language}_{font_small_bpp}.h"\'\n']
+        font_small_path = font_small_file or f'font_small_{language}_{font_small_bpp}.h'
+        env += [f'    -DFONT_SMALL=\'"fonts/{font_small_path}"\'\n']
         env += [f'    -DFONT_MEDIUM=\'"fonts/font_medium_{language}_{font_medium_bpp}.h"\'\n']
         env += [f'    -DFONT_LARGE=\'"fonts/font_large_{font_large_bpp}.h"\'\n']
         env += [f'    -DFONT_SYMBOLS=\'"fonts/font_symbols_{font_symbols_bpp}.h"\'\n']
@@ -97,8 +98,9 @@ env += build_env('fs2011-gd32f150c8', 'monochrome', 'monochrome', 'monochrome', 
 env += build_env('fs2011-gd32f103c8', 'monochrome', 'monochrome', 'monochrome', 'monochrome', False, '0xa800', '0xb000', '0xc800')
 env += build_env('bosean-fs600', 'monochrome', 'monochrome', 'monochrome', 'monochrome', False, '0xa800', '0xb000', '0xc800')
 env += build_env('bosean-fs1000', 'monochrome', 'monochrome', 'monochrome', 'monochrome', False, '0xa800', '0xb000', '0xc800')
-env += build_env('bosean-fs5000', 'color_21', 'color_32', 'color_84', 'color', False, '0xd000', '0xe000', '0x14000',
+env += build_env('bosean-fs5000', 'color_21', 'color_32', 'color_84', 'color', False, '0xd000', '0xe000', '0x18000',
                  languages=['ko'],
+                 font_small_file='font_small_ko_fs5000_color_21.h',
                  extra_flags=['-DFONT_TINY=\'"fonts/font_tiny_ko_color_14.h"\'',
                               '-DFONT_VALUE=\'"fonts/font_value_color_54.h"\'',
                               '-DFONT_SYMBOLS_SMALL=\'"fonts/font_symbols_color_16.h"\''])

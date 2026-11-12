@@ -373,11 +373,19 @@ def get_tiny_font_keys():
         source_text += open(source_file, "rt", encoding="utf-8").read() + "\n"
 
     keys.update(re.findall(r"\bSTRING_HISTORY_\w+", open(source_path / "system/strings/ko.h", "rt", encoding="utf-8").read()))
-    keys.update(re.findall(r"\bMenu\s+\w+(?:\[\])?\s*=\s*\{\s*(?:getString\()?(STRING_\w+)", source_text))
+    menu_loose = re.findall(r"\bMenu\s+(\w+)\s*=\s*\{", source_text)
+    menu_titles = re.findall(r"\bMenu\s+\w+\s*=\s*\{\s*(?:getString\()?(STRING_\w+)", source_text)
+    if len(menu_loose) != len(menu_titles):
+        raise Exception(
+            f"Tiny font: {len(menu_loose)} Menu initializers found but only {len(menu_titles)} have a STRING_ title"
+        )
+    keys.update(menu_titles)
     keys.update(re.findall(r"drawTitleBar\(getString\((STRING_\w+)\)\)", source_text))
     keys.update(re.findall(r"drawNotification\(getString\((STRING_\w+)\)", source_text))
 
     rng_options = re.search(r"rngModeMenuOptions\[\]\s*=\s*\{(.*?)\};", source_text, re.DOTALL)
+    if rng_options is None:
+        raise Exception("Tiny font: rngModeMenuOptions[] not found in sources")
     keys.update(re.findall(r"STRING_\w+", rng_options.group(1)))
 
     return keys
@@ -396,11 +404,6 @@ if missing_keys:
     raise Exception(f"Tiny font: strings not found: {sorted(missing_keys)}")
 
 codepoint_set_tiny = get_codepoint_set(tiny_text, "0x20-0x7e,0xb1,0xb5")
-tiny_codepoints = textproc.parse_codepoint_set(codepoint_set_tiny)
-for line in tiny_text:
-    for char in textproc.filter_c_strings(line):
-        if ord(char) not in tiny_codepoints:
-            raise Exception(f"Tiny font: missing codepoint {ord(char):#x}")
 
 run_fontconv(
     "NotoSansKR-SemiBold.ttf",
@@ -408,4 +411,16 @@ run_fontconv(
     "font_tiny_ko_color_14.h",
     "font_tiny",
     pixels=14,
+)
+
+# FS-5000 small font (Korean)
+run_fontconv(
+    "NotoSansKR-SemiBold.ttf",
+    get_codepoint_set(ko_lines, "0x20-0x7e"),
+    "font_small_ko_fs5000_color_21.h",
+    "font_small",
+    pixels=21,
+    ascent=23,
+    descent=7,
+    cap_height=16,
 )
