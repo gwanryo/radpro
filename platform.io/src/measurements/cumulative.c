@@ -9,11 +9,14 @@
 
 #include "../measurements/cumulative.h"
 #include "../measurements/instantaneous.h"
+#include "../measurements/measurements.h"
+#include "../peripherals/rtc.h"
 #include "../peripherals/voice.h"
 #include "../system/cmath.h"
 #include "../system/events.h"
 #include "../system/settings.h"
 #include "../ui/measurements.h"
+#include "../ui/menu.h"
 #include "../ui/system.h"
 
 typedef enum
@@ -38,9 +41,17 @@ static struct
 
 static CumulativeTab cumulativeTab;
 
+#if defined(FS5000)
+static uint32_t cumulativeDoseStartTime;
+#endif
+
 void resetCumulativeDose(void)
 {
     cumulativeTab = CUMULATIVE_TAB_TIME;
+
+#if defined(FS5000)
+    selectMenuItem(&cumulativeDoseMenu, 0);
+#endif
 
     Dose tubeDose = cumulative.dose;
     clearCumulativeDose();
@@ -134,6 +145,25 @@ AlertLevel getCumulativeDoseAlertLevel(void)
     return cumulative.alertLevel;
 }
 
+#if defined(FS5000)
+void setCumulativeDoseStartTime(uint32_t value)
+{
+    cumulativeDoseStartTime = value;
+}
+
+uint32_t getCumulativeDoseStartTime(void)
+{
+    return cumulativeDoseStartTime;
+}
+
+void clearCumulativeDoseValues(void)
+{
+    clearCumulativeDose();
+
+    cumulativeDoseStartTime = getDeviceTime();
+}
+#endif
+
 // Cumulative dose view
 
 static void advanceCumulativeDoseTab(void)
@@ -159,6 +189,13 @@ static MeasurementStyle getCumulativeDoseMeasurementStyle(void)
     return MEASUREMENTSTYLE_NORMAL;
 }
 
+#if defined(FS5000)
+MeasurementStyle getCumulativeDoseStyle(void)
+{
+    return getCumulativeDoseMeasurementStyle();
+}
+
+#endif
 static void drawCumulativeDoseValue(void)
 {
     char valueString[32] = "";
@@ -254,3 +291,74 @@ void onCumulativeDoseViewEvent(ViewEvent event)
         break;
     }
 }
+
+#if defined(FS5000)
+static void onCumulativeDoseResetConfirmationEvent(ViewEvent event)
+{
+    switch (event)
+    {
+    case EVENT_KEY_BACK:
+    case EVENT_KEY_SELECT:
+        showMenu(&cumulativeDoseMenu);
+
+        break;
+
+    case EVENT_DRAW:
+        drawNotification(getString(STRING_RESET), getString(STRING_NOTIFICATION_CUMULATIVE_RESET_SUCCESS));
+
+        break;
+
+    default:
+        break;
+    }
+}
+
+static void onCumulativeDoseResetAlertEvent(ViewEvent event)
+{
+    switch (event)
+    {
+    case EVENT_KEY_BACK:
+        showMenu(&cumulativeDoseMenu);
+
+        break;
+
+    case EVENT_KEY_SELECT:
+        clearCumulativeDoseValues();
+
+        showView(onCumulativeDoseResetConfirmationEvent);
+
+        break;
+
+    case EVENT_DRAW:
+        drawNotification(getString(STRING_RESET), getString(STRING_NOTIFICATION_CUMULATIVE_RESET_CONFIRM));
+
+        break;
+
+    default:
+        break;
+    }
+}
+
+static const char *onCumulativeDoseMenuGetOption(menu_size_t index, MenuStyle *menuStyle)
+{
+    *menuStyle = 0;
+
+    return getString(STRING_RESET);
+}
+
+static void onCumulativeDoseMenuSelect(menu_size_t index)
+{
+    showView(onCumulativeDoseResetAlertEvent);
+}
+
+static MenuState cumulativeDoseMenuState;
+
+const Menu cumulativeDoseMenu = {
+    STRING_CUMULATIVE_DOSE,
+    &cumulativeDoseMenuState,
+    1,
+    onCumulativeDoseMenuGetOption,
+    onCumulativeDoseMenuSelect,
+    showMeasurementsMenu,
+};
+#endif

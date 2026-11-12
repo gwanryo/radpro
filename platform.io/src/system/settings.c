@@ -88,6 +88,9 @@ typedef
     Dose tube;
     Dose dose;
     Settings settings;
+#if defined(FS5000)
+    uint32_t doseStartTime;
+#endif
 } State;
 
 static uint32_t stateOffset;
@@ -201,9 +204,16 @@ void initSettings(void)
         setCumulativeDosePulseCount(state->dose.pulseCount);
         setTubeTime(state->tube.time);
         setTubePulseCount(state->tube.pulseCount);
+#if defined(FS5000)
+        setCumulativeDoseStartTime(state->doseStartTime);
+#endif
 
         settings = state->settings;
     }
+#if defined(FS5000)
+    else
+        setCumulativeDoseStartTime(getDeviceTime());
+#endif
 }
 
 void resetSettings(void)
@@ -216,6 +226,11 @@ void saveSettings(void)
     // Save state
     State state;
 
+#if defined(FS5000)
+    memset(&state, 0, sizeof(state));
+
+    state.doseStartTime = getCumulativeDoseStartTime();
+#endif
     state.dose.time = getCumulativeDoseTime();
     state.dose.pulseCount = getCumulativeDosePulseCount();
     state.tube.time = getTubeTime();

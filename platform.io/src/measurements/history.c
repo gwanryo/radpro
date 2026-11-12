@@ -36,6 +36,9 @@ typedef enum
 typedef struct
 {
     cstring name;
+#if defined(FS5000)
+    cstring halfName;
+#endif
     uint32_t binInterval;
     uint8_t timeTicksNum;
 } History;
@@ -51,12 +54,21 @@ typedef struct
 } HistoryState;
 
 static const History histories[] = {
+#if defined(FS5000)
+    {STRING_HISTORY_10_MINUTES, STRING_HISTORY_HALF_10_MINUTES, 10 * 60 / (HISTORY_BIN_NUM - 1), 10},
+    {STRING_HISTORY_1_HOUR, STRING_HISTORY_HALF_1_HOUR, 60 * 60 / (HISTORY_BIN_NUM - 1), 6},
+    {STRING_HISTORY_1_DAY, STRING_HISTORY_HALF_1_DAY, 24 * 60 * 60 / (HISTORY_BIN_NUM - 1), 8},
+    {STRING_HISTORY_1_WEEK, STRING_HISTORY_HALF_1_WEEK, 7 * 24 * 60 * 60 / (HISTORY_BIN_NUM - 1), 7},
+    {STRING_HISTORY_1_MONTH, STRING_HISTORY_HALF_1_MONTH, 28 * 24 * 60 * 60 / (HISTORY_BIN_NUM - 1), 4},
+    {STRING_HISTORY_1_YEAR, STRING_HISTORY_HALF_1_YEAR, 365 * 24 * 60 * 60 / (HISTORY_BIN_NUM - 1), 12},
+#else
     {STRING_HISTORY_10_MINUTES, 10 * 60 / (HISTORY_BIN_NUM - 1), 10},
     {STRING_HISTORY_1_HOUR, 60 * 60 / (HISTORY_BIN_NUM - 1), 6},
     {STRING_HISTORY_1_DAY, 24 * 60 * 60 / (HISTORY_BIN_NUM - 1), 8},
     {STRING_HISTORY_1_WEEK, 7 * 24 * 60 * 60 / (HISTORY_BIN_NUM - 1), 7},
     {STRING_HISTORY_1_MONTH, 28 * 24 * 60 * 60 / (HISTORY_BIN_NUM - 1), 4},
     {STRING_HISTORY_1_YEAR, 365 * 24 * 60 * 60 / (HISTORY_BIN_NUM - 1), 12},
+#endif
 };
 
 static HistoryState historyStates[HISTORY_TAB_NUM];
@@ -260,6 +272,37 @@ void updateHistory(void)
     }
 }
 
+#if defined(FS5000)
+void selectHistoryTab(int32_t delta)
+{
+    int32_t tab = ((int32_t)historyTab + delta) % HISTORY_TAB_NUM;
+    if (tab < 0)
+        tab += HISTORY_TAB_NUM;
+
+    historyTab = tab;
+}
+
+const uint8_t *getHistoryLogValues(void)
+{
+    return historyStates[historyTab].logValues;
+}
+
+uint32_t getHistoryTimeTicksNum(void)
+{
+    return histories[historyTab].timeTicksNum;
+}
+
+const char *getHistoryPeriodString(void)
+{
+    return getString(histories[historyTab].name);
+}
+
+const char *getHistoryHalfString(void)
+{
+    return getString(histories[historyTab].halfName);
+}
+
+#endif
 // History view
 
 static void advanceHistoryTab(void)

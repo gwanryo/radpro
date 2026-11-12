@@ -507,6 +507,9 @@ static const MenuOption measurementsMenuOptions[] = {
 #endif
     {STRING_INSTANTANEOUS, &instantaneousMenu},
     {STRING_AVERAGE, &averageMenu},
+#if defined(FS5000)
+    {STRING_CUMULATIVE_DOSE, &cumulativeDoseMenu},
+#endif
 };
 
 static const char *onMeasurementsMenuGetOption(menu_size_t index, MenuStyle *menuStyle)
