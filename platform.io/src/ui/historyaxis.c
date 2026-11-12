@@ -13,7 +13,8 @@
 #include "ui/history.h"
 #include "ui/historyaxis.h"
 
-#define AXIS_EPSILON 1e-4F
+#define AXIS_EPSILON 1e-6F
+#define AXIS_EXPONENT_EPSILON 1e-5F
 #define AXIS_WIDE_RATIO 31.6227766F
 #define AXIS_LINE_SPACING 18
 
@@ -123,7 +124,7 @@ int32_t getHistoryAxisY(const HistoryAxis *axis, float value, int32_t height)
 
 int32_t getHistoryAxisPrefixExponent(float top, int32_t minExponent)
 {
-    int32_t exponent = 3 * (int32_t)floorf(log10f(top) / 3 + AXIS_EPSILON);
+    int32_t exponent = 3 * (int32_t)floorf(log10f(top) / 3 + AXIS_EXPONENT_EPSILON);
 
     return (exponent > minExponent) ? exponent : minExponent;
 }

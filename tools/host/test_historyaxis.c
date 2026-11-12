@@ -80,5 +80,13 @@ int main(void)
     expect_lines(&a, (float[]){0.1e-6f, 0.2e-6f}, 2);
     assert(getHistoryAxisY(&(HistoryAxis){0.1f, 10.0f, 0, {0}}, 1.0f, 176) == 88);
 
+    assert(buildHistoryAxis(0.99995f, 0.99995f, 0, 176, &a));
+    assert(feq(a.bottom, 0.5f));
+    assert(buildHistoryAxis(0.8f, 0.83329f, 0, 176, &a));
+    assert(feq(a.top, 1.0f));
+    assert(!strcatHistoryAxisLabel(s, 12.0005f, 0) && s[0] == 0);
+    label_is(9999.5f, 0, "9999.5");
+    assert(getHistoryAxisPrefixExponent(0.9995f, -9) == -3);
+
     return 0;
 }
