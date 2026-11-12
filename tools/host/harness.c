@@ -76,12 +76,15 @@ bool isAlertPending(void) { return false; }
 bool isLockModeEnabled(void) { return false; }
 bool isSoundIconActive(void) { return false; }
 
+static bool saveFailed;
+
 static void save(const char *path)
 {
     FILE *f = fopen(path, "wb");
     if (!f)
     {
         fprintf(stderr, "cannot write %s\n", path);
+        saveFailed = true;
         return;
     }
     fprintf(f, "P6\n240 320\n255\n");
@@ -178,5 +181,5 @@ int main(void)
 
     render("strings", drawStrings);
 
-    return 0;
+    return saveFailed ? 1 : 0;
 }
