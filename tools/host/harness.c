@@ -334,6 +334,18 @@ int main(void)
                       "0.128", "\xc2\xb5Sv/h", "0.317", "\xc2\xb5Sv/h", "1.284", "\xc2\xb5Sv", MEASUREMENTSTYLE_NORMAL,
                       "--", "1234:56:12");
     render("page1-long", drawPage1Case);
+
+    page1Bar = 0.142E-6F;
+    page1 = makePage1("0.142", "\xc2\xb5Sv/h", "\xc2\xb1" "12%", MEASUREMENTSTYLE_NORMAL,
+                      "0.128", "\xc2\xb5Sv/h", "0.317", "\xc2\xb5Sv/h", "1.284", "\xc2\xb5Sv", MEASUREMENTSTYLE_NORMAL,
+                      "11.13 05:13", "1234:56:12");
+    render("page1-longboth", drawPage1Case);
+
+    page1Bar = 0.142E-6F;
+    page1 = makePage1("123456", "cpm", "\xc2\xb1" "5%", MEASUREMENTSTYLE_NORMAL,
+                      "98765", "cpm", "123456", "cpm", "1.284", "\xc2\xb5Sv", MEASUREMENTSTYLE_NORMAL,
+                      "11.13 05:13", "10:01:12");
+    render("page1-sixdigits", drawPage1Case);
     settings.displayTheme = DISPLAY_THEME_DAY;
 
     settings.displayTheme = DISPLAY_THEME_DAY;

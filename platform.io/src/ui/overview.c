@@ -123,6 +123,11 @@ static void drawRow(uint32_t index, const OverviewRow *row)
     int16_t gap = row->unit[0] ? ROW_UNIT_GAP : 0;
     int16_t unitLeft = DISPLAY_WIDTH - PADDING_RIGHT - getTextWidth(row->unit);
     int16_t valueLeft = unitLeft - gap - valueWidth;
+    if (valueLeft < PADDING_LEFT)
+        valueLeft = PADDING_LEFT;
+    int16_t valueRectWidth = unitLeft - valueLeft;
+    if (valueRectWidth > valueWidth + gap)
+        valueRectWidth = valueWidth + gap;
 
     setStrokeColor(COLOR_ELEMENT_NEUTRAL);
     drawText(row->key ? row->key : "",
@@ -131,7 +136,7 @@ static void drawRow(uint32_t index, const OverviewRow *row)
 
     setStrokeColor(getRowColorIndex(row->style));
     drawText(row->value,
-             &(mr_rectangle_t){valueLeft, top, valueWidth + gap, height},
+             &(mr_rectangle_t){valueLeft, top, valueRectWidth, height},
              &(mr_point_t){0, offsetY});
 
     setStrokeColor(COLOR_ELEMENT_NEUTRAL);
@@ -150,15 +155,18 @@ static void drawLabeledTime(const char *label, const char *time, int16_t left, i
     strcat(buffer, label);
     strcat(buffer, " ");
     int16_t labelWidth = getTextWidth(buffer);
+    if (labelWidth > width)
+        labelWidth = width;
 
     setStrokeColor(COLOR_ELEMENT_NEUTRAL);
     drawText(buffer,
              &(mr_rectangle_t){left, ROWS_BOTTOM, labelWidth, height},
              &(mr_point_t){0, offsetY});
     setStrokeColor(COLOR_ELEMENT_ACTIVE);
-    drawText(time,
-             &(mr_rectangle_t){left + labelWidth, ROWS_BOTTOM, width - labelWidth, height},
-             &(mr_point_t){0, offsetY});
+    if (width > labelWidth)
+        drawText(time,
+                 &(mr_rectangle_t){left + labelWidth, ROWS_BOTTOM, width - labelWidth, height},
+                 &(mr_point_t){0, offsetY});
 }
 
 static void drawTimes(const OverviewPage1 *page)
@@ -181,6 +189,9 @@ static void drawTimes(const OverviewPage1 *page)
 
 void drawOverviewPageDots(uint32_t pageIndex, uint32_t pageNum, int16_t top)
 {
+    if (pageNum == 0)
+        return;
+
     int16_t width = pageNum * DOTS_SIZE + (pageNum - 1) * DOTS_GAP;
     int16_t left = (DISPLAY_WIDTH - width) / 2;
 

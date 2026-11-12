@@ -344,12 +344,12 @@ static int16_t getMeasurementBarX(float value, float offset)
 }
 
 static void drawMeasurementBarAt(int16_t top, float value, int32_t minExponent, float warningValue, float alarmValue,
-                                 int16_t labelHeight, int16_t labelOffsetY, int16_t tickSpacing)
+                                 int16_t labelHeight, int16_t labelOffsetY, int16_t tickSpacing, int16_t paddingBottom)
 {
     const int16_t frameTop = BAR_TICKS_HEIGHT + tickSpacing;
     const int16_t contentTop = frameTop + 1;
     const int16_t frameBottom = frameTop + BAR_FRAME_HEIGHT;
-    const int16_t bufferHeight = frameBottom + MEASUREMENT_PADDING_BOTTOM;
+    const int16_t bufferHeight = frameBottom + paddingBottom;
 
     // Pre-calculations
     const LabelSpan *labelSpansTicks;
@@ -478,7 +478,7 @@ static void drawMeasurementBarAt(int16_t top, float value, int32_t minExponent, 
 
 void drawMeasurementBar(float value, int32_t minExponent, float warningValue, float alarmValue)
 {
-    drawMeasurementBarAt(BAR_TOP, value, minExponent, warningValue, alarmValue, BAR_LABEL_HEIGHT, BAR_LABEL_OFFSETY, TICKS_SPACING);
+    drawMeasurementBarAt(BAR_TOP, value, minExponent, warningValue, alarmValue, BAR_LABEL_HEIGHT, BAR_LABEL_OFFSETY, TICKS_SPACING, MEASUREMENT_PADDING_BOTTOM);
 }
 
 #if defined(DISPLAY_240X320)
@@ -534,7 +534,7 @@ void drawMeasurementOverviewValue(const char *valueString, const char *unitStrin
 
 void drawMeasurementOverviewBar(float value, int32_t minExponent, float warningValue, float alarmValue)
 {
-    drawMeasurementBarAt(OVERVIEW_BAR_TOP, value, minExponent, warningValue, alarmValue, BAR_LABEL_HEIGHT, BAR_LABEL_OFFSETY, TICKS_SPACING);
+    drawMeasurementBarAt(OVERVIEW_BAR_TOP, value, minExponent, warningValue, alarmValue, BAR_LABEL_HEIGHT, BAR_LABEL_OFFSETY, TICKS_SPACING, MEASUREMENT_PADDING_BOTTOM);
 }
 
 #if defined(FS5000)
@@ -544,7 +544,7 @@ void drawMeasurementOverviewBar(float value, int32_t minExponent, float warningV
 void drawMeasurementCompactBar(float value, int32_t minExponent, float warningValue, float alarmValue)
 {
     setFont(font_tiny);
-    drawMeasurementBarAt(COMPACTBAR_TOP, value, minExponent, warningValue, alarmValue, COMPACTBAR_LABEL_HEIGHT, 0, 0);
+    drawMeasurementBarAt(COMPACTBAR_TOP, value, minExponent, warningValue, alarmValue, COMPACTBAR_LABEL_HEIGHT, 0, 0, 0);
 }
 #endif
 
