@@ -117,6 +117,8 @@ static ColorIndex getRowColorIndex(MeasurementStyle style)
         return COLOR_WARNING;
     else if (style == MEASUREMENTSTYLE_ALARM)
         return COLOR_ALARM;
+    else if (style == MEASUREMENTSTYLE_DONE)
+        return COLOR_INSTRUMENT_ENHANCED_SECONDARY;
     else
         return COLOR_ELEMENT_ACTIVE;
 }

@@ -31,14 +31,6 @@ typedef enum
 
 static OverviewPage overviewPage;
 
-static cstring overviewAveragingStrings[] = {
-    STRING_ADAPTIVE_FAST,
-    STRING_ADAPTIVE_PRECISION,
-    STRING_1_MINUTE,
-    STRING_30_SECONDS,
-    STRING_10_SECONDS,
-};
-
 void resetOverview(void)
 {
     overviewPage = OVERVIEW_PAGE_VALUES;
@@ -99,8 +91,7 @@ static void buildStartTimeString(char *timeString)
         return;
     }
 
-    int32_t timeZoneOffset = 3600 * (int32_t)getDeviceTimeZone();
-    getDateTimeFromTime(startTime + timeZoneOffset, &dateTime);
+    getLocalDateTimeFromDeviceTime(startTime, &dateTime);
 
     strcatUInt32(timeString, dateTime.month, 2);
     strcatChar(timeString, '.');
@@ -171,7 +162,7 @@ static void drawOverviewValuesPage(void)
     buildOverviewRow(&page.rows[2], getString(STRING_CUMULATIVE_DOSE), getCumulativeDosePulseCount(), &units->dose, getCumulativeDoseStyle());
 
     page.rows[3].key = getString(STRING_COUNTS);
-    strcatUInt32(page.rows[3].value, getCumulativeDosePulseCount(), 0);
+    strcatUInt32Grouped(page.rows[3].value, getCumulativeDosePulseCount());
     page.rows[3].style = MEASUREMENTSTYLE_NORMAL;
 
     buildStartTimeString(page.startTime);
@@ -227,7 +218,7 @@ static void drawOverviewGraphPage(void)
 
 static void drawOverviewView(void)
 {
-    drawMeasurementTitleBar(getString(overviewAveragingStrings[settings.instantaneousAveraging]));
+    drawMeasurementTitleBar(getInstantaneousAveragingString());
 
     if (overviewPage == OVERVIEW_PAGE_VALUES)
         drawOverviewValuesPage();

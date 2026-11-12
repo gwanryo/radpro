@@ -96,6 +96,13 @@ void getDeviceDateTime(RTCDateTime *dateTime)
     getDateTimeFromTime(getDeviceTime() + getTimeZoneOffset(), dateTime);
 }
 
+#if defined(FS5000)
+void getLocalDateTimeFromDeviceTime(uint32_t time, RTCDateTime *dateTime)
+{
+    getDateTimeFromTime(time + getTimeZoneOffset(), dateTime);
+}
+#endif
+
 bool setDeviceTimeZone(float value)
 {
     int32_t index = (int32_t)(value + RTC_TIMEZONE_P0000);

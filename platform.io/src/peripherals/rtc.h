@@ -35,6 +35,9 @@ void getDateTimeFromTime(uint32_t value, RTCDateTime *dateTime);
 
 void setDeviceDateTime(const RTCDateTime *dateTime);
 void getDeviceDateTime(RTCDateTime *dateTime);
+#if defined(FS5000)
+void getLocalDateTimeFromDeviceTime(uint32_t time, RTCDateTime *dateTime);
+#endif
 
 bool setDeviceTime(uint32_t value);
 uint32_t getDeviceTime(void);

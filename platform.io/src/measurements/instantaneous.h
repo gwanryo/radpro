@@ -40,6 +40,8 @@ MeasurementStyle getInstantaneousRateStyle(void);
 void clearInstantaneousRateValues(void);
 
 void drawInstantaneousRateBar(void (*drawBar)(float value, int32_t minExponent, float warningValue, float alarmValue));
+
+const char *getInstantaneousAveragingString(void);
 #endif
 
 bool isInstantaneousRateConfidenceGood(void);

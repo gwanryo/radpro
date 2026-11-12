@@ -161,6 +161,18 @@ void strcatMetricPrefixFromExponent(char *s, int32_t exponent)
 {
     strcatMetricPrefix(s, divideDown(exponent, 3));
 }
+
+void strcatUInt32Grouped(char *s, uint32_t value)
+{
+    if (value >= 1000)
+    {
+        strcatUInt32Grouped(s, value / 1000);
+        strcatChar(s, ',');
+        strcatUInt32(s, value % 1000, 3);
+    }
+    else
+        strcatUInt32(s, value, 0);
+}
 #endif
 
 const char *hexDigits = "0123456789abcdef";

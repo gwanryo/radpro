@@ -198,7 +198,7 @@ static OverviewPage1 makePage1(const char *value, const char *unit, const char *
     strcpy(page.rows[1].unit, maxUnit);
     strcpy(page.rows[2].value, dose);
     strcpy(page.rows[2].unit, doseUnit);
-    strcpy(page.rows[3].value, "11,849");
+    strcatUInt32Grouped(page.rows[3].value, 11849);
     strcpy(page.startTime, start);
     strcpy(page.elapsedTime, elapsed);
     return page;
@@ -413,6 +413,15 @@ int main(void)
                       "98765", "cpm", "123456", "cpm", "1.284", "\xc2\xb5Sv", MEASUREMENTSTYLE_NORMAL,
                       "11.13 05:13", "10:01:12");
     render("page1-sixdigits", drawPage1Case);
+
+    page1Bar = 0.142E-6F;
+    page1 = makePage1("0.142", "\xc2\xb5Sv/h", "\xc2\xb1" "12%", MEASUREMENTSTYLE_NORMAL,
+                      "0.128", "\xc2\xb5Sv/h", "0.317", "\xc2\xb5Sv/h", "1.284", "\xc2\xb5Sv", MEASUREMENTSTYLE_NORMAL,
+                      "11.13 05:13", "10:01:12");
+    page1.rows[0].style = MEASUREMENTSTYLE_DONE;
+    strclr(page1.rows[3].value);
+    strcatUInt32Grouped(page1.rows[3].value, UINT32_MAX);
+    render("page1-done", drawPage1Case);
     settings.displayTheme = DISPLAY_THEME_DAY;
 
     averagingString = getString(STRING_ADAPTIVE_FAST);

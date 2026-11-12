@@ -439,6 +439,13 @@ static cstring instantaneousMenuOptions[] = {
     STRING_10_SECONDS,
 };
 
+#if defined(FS5000)
+const char *getInstantaneousAveragingString(void)
+{
+    return getString(instantaneousMenuOptions[settings.instantaneousAveraging]);
+}
+
+#endif
 static const char *onInstantaneousMenuGetOption(menu_size_t index, MenuStyle *menuStyle)
 {
     *menuStyle = (index == settings.instantaneousAveraging);
