@@ -50,6 +50,11 @@ void clearComm(bool open)
     comm.open = open;
 }
 
+static void strcatComm(const char *value)
+{
+    strncat(comm.buffer, value, sizeof(comm.buffer) - strlen(comm.buffer) - 1);
+}
+
 static void pushCommOk(void)
 {
     strcpy(comm.buffer, "OK");
@@ -65,7 +70,7 @@ static void pushCommOkSpace(void)
 static void pushCommString(const char *value)
 {
     pushCommOkSpace();
-    strcat(comm.buffer, value);
+    strcatComm(value);
 }
 
 static void pushCommUInt32(uint32_t value)
@@ -483,8 +488,8 @@ void updateComm(void)
         {
             char deviceId[32];
             getDeviceId(deviceId);
-            strcat(comm.buffer, deviceId);
-            strcat(comm.buffer, "\r\n");
+            strcatComm(deviceId);
+            strcatComm("\r\n");
             comm.transmitState = TRANSMIT_RESPONSE;
 
             transmitComm();
