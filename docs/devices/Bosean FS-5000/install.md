@@ -104,7 +104,7 @@ Once installed, here are the essential controls:
 
 ### Navigation
 
-* **Press Up / Down:** Change measurement mode / navigate menus
+* **Press Up / Down:** Navigate menus
 * **Short Hold Down:** Select / open settings
 * **Short Hold Up:** Go back
 
@@ -115,9 +115,12 @@ Once installed, here are the essential controls:
 
 ### Measurement Screen
 
-* **Short Hold Up:** Switch secondary display
-* **Long Hold Up:** Reset measurement / dismiss alerts
+* **Press OK:** Switch between the two overview pages
+* **Press Up / Down (page 2):** Change the history period
+* **Long Hold Up:** Reset instantaneous rate, maximum and average / dismiss alerts
 * **Long Hold Up + Down:** Toggle pulse sound
+
+See [the overview screen](screen.md) for details.
 
 ### Random generator
 
