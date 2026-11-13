@@ -98,7 +98,7 @@ env += build_env('fs2011-gd32f150c8', 'monochrome', 'monochrome', 'monochrome', 
 env += build_env('fs2011-gd32f103c8', 'monochrome', 'monochrome', 'monochrome', 'monochrome', False, '0xa800', '0xb000', '0xc800')
 env += build_env('bosean-fs600', 'monochrome', 'monochrome', 'monochrome', 'monochrome', False, '0xa800', '0xb000', '0xc800')
 env += build_env('bosean-fs1000', 'monochrome', 'monochrome', 'monochrome', 'monochrome', False, '0xa800', '0xb000', '0xc800')
-env += build_env('bosean-fs5000', 'color_21', 'color_32', 'color_84', 'color', False, '0xd000', '0xe000', '0x18000',
+env += build_env('bosean-fs5000', 'color_21', 'color_32', 'color_84', 'color', False, '0xd000', '0xe000', '0x14000',
                  languages=['ko'],
                  font_small_file='font_small_ko_fs5000_color_21.h',
                  extra_flags=['-DFONT_TINY=\'"fonts/font_tiny_ko_color_14.h"\'',

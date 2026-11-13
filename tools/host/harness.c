@@ -326,6 +326,11 @@ static void drawRNGCase(void)
     drawRNG(getString(STRING_RANDOM_GENERATOR), false, "0123456789ABCDEF", "50%");
 }
 
+static void drawRNGLargeCase(void)
+{
+    drawRNG(getString(STRING_RANDOM_GENERATOR), true, "100", "");
+}
+
 static void drawNotificationCase(void)
 {
     drawNotification(getString(STRING_CUMULATIVE), getString(STRING_NOTIFICATION_CUMULATIVE_RESET_CONFIRM));
@@ -503,6 +508,7 @@ int main(void)
     render("statistics", drawStatistics);
     render("game", drawGameCase);
     render("rng", drawRNGCase);
+    render("rng-large", drawRNGLargeCase);
     render("notification", drawNotificationCase);
 
     return saveFailed ? 1 : 0;

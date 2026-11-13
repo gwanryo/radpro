@@ -346,6 +346,41 @@ for language_file in Path("../platform.io/src/system/strings").glob("*.h"):
     )
 
 
+# FS-5000 strings not compiled into the firmware image
+FS5000_UNUSED_KEYS = {
+    "STRING_NUMBERS",
+    "STRING_KHZ",
+    "STRING_VOLT_PER_METER_UNIT",
+    "STRING_TESLA",
+    "STRING_GAUSS",
+    "STRING_NOTIFICATION_HVCUSTOM",
+    "STRING_HISTORY",
+    "STRING_ELECTRIC_FIELD",
+    "STRING_MAGNETIC_FIELD",
+    "STRING_ALERT_DONE",
+    "STRING_DATAMODE",
+    "STRING_VOICE",
+    "STRING_ELECTRIC_FIELD_ALARM",
+    "STRING_MAGNETIC_FIELD_ALARM",
+    "STRING_MAGNETIC_FIELD_UNITS",
+    "STRING_HVPROFILE",
+    "STRING_FACTORY_DEFAULT",
+    "STRING_ACCURACY",
+    "STRING_ENERGY_SAVING",
+    "STRING_CUSTOM",
+    "STRING_PWMFREQUENCY",
+    "STRING_PWMDUTY_CYCLE",
+    "STRING_CONTRAST",
+    "STRING_ALWAYS_OFF",
+    "STRING_PULSEVOLUME",
+    "STRING_ALERTVOLUME",
+    "STRING_VOICEVOLUME",
+    "STRING_NI_MH",
+    "STRING_ALKALINE",
+    "STRING_TUBE_LIFE",
+    "STRING_DEVICE_ID",
+}
+
 # FS-5000 tiny font (Korean)
 def get_tiny_font_keys():
     keys = {
@@ -391,7 +426,7 @@ def get_tiny_font_keys():
     return keys
 
 
-tiny_keys = get_tiny_font_keys()
+tiny_keys = get_tiny_font_keys() - FS5000_UNUSED_KEYS
 ko_lines = open("../platform.io/src/system/strings/ko.h", "rt", encoding="utf-8").readlines()
 tiny_text = [
     line
@@ -414,9 +449,27 @@ run_fontconv(
 )
 
 # FS-5000 small font (Korean)
+small_excluded_keys = {
+    "STRING_START",
+    "STRING_ELAPSED",
+    "STRING_AVERAGE_TIME",
+    "STRING_NOW",
+    "STRING_WARNING",
+    "STRING_ALARM",
+}
+small_excluded_keys.update(FS5000_UNUSED_KEYS)
+small_excluded_keys.update(
+    key for key in re.findall(r"\bSTRING_HISTORY_\w+", "".join(ko_lines))
+)
+small_text = [
+    line
+    for line in ko_lines
+    if not (line.startswith("#define ") and line.split()[1] in small_excluded_keys)
+]
+
 run_fontconv(
     "NotoSansKR-SemiBold.ttf",
-    get_codepoint_set(ko_lines, "0x20-0x7e"),
+    get_codepoint_set(small_text, "0x20-0x7e"),
     "font_small_ko_fs5000_color_21.h",
     "font_small",
     pixels=21,

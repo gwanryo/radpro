@@ -50,9 +50,17 @@ void drawRNG(const char *title, bool isLarge, const char *rngString, const char 
         // State
         const mr_point_t rngNumberOffset = {
             (CONTENT_WIDTH / 2),
+#if defined(FS5000)
+            ((CONTENT_HEIGHT - FONT_VALUE_LINE_HEIGHT) / 2),
+#else
             ((CONTENT_HEIGHT - FONT_LARGE_LINE_HEIGHT) / 2),
+#endif
         };
+#if defined(FS5000)
+        setFont(font_value);
+#else
         setFont(font_large);
+#endif
         drawCenteredText(rngString, &contentRectangle, &rngNumberOffset);
     }
 }
