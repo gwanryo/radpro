@@ -66,6 +66,7 @@ Connect the ST-LINK as follows:
 ### Tips
 
 * For a reliable connection, solder a 4-pin header to SWD
+* Do not connect the device's USB-C port while the ST-LINK is attached (both would power the board). Connect USB-C only after disconnecting the ST-LINK, when the installer asks for it.
 
 ⚠️ Double-check all connections before powering anything. Incorrect wiring can damage the device.
 
@@ -85,6 +86,12 @@ The original firmware is automatically **backed up** into the `backup/` folder
 Rad Pro is flashed to the device.
 
 > Keep the backup file safe—you'll need it to restore the original firmware.
+
+After flashing, the installer asks you to disconnect the ST-LINK and connect the device's USB-C port with a data cable, and waits up to 60 seconds for it (press Enter to skip). The device clock and time zone are set from the computer only if the device is found; after a skip or timeout, set the clock later in the settings or with any `radpro-tool.py` command. To change the wait on Linux/macOS, set `SYNC_WAIT_SECONDS` (e.g. `SYNC_WAIT_SECONDS=120 ./install.sh`).
+
+### Updating Rad Pro (keeping settings)
+
+To update an already installed Rad Pro, run `update.bat` (Windows) or `./update.sh` (Linux/macOS) instead of the installer. Update does not erase the whole flash, so your settings and data log are kept. Use the installer instead when the new version changes the settings format or the firmware size.
 
 ### Restoring Original Firmware
 

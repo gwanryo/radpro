@@ -1,2 +1,5 @@
 *.sh text eol=lf
 tools/host/*.py text eol=lf
+tools/release/**/*.bat text eol=crlf
+tools/release/**/*.ps1 text eol=crlf
+tools/release/**/*.sh text eol=lf
