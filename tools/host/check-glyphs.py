@@ -67,7 +67,10 @@ if check_unused:
     block = re.search(r"FS5000_UNUSED_KEYS = \{(.*?)\}", script, re.DOTALL).group(1)
     values = dict(definitions)
     for key in re.findall(r'"(STRING_\w+)"', block):
-        if key in values and unescape(values[key]).encode("utf-8") in firmware:
+        if key not in values:
+            print(f"warning: {key} in FS5000_UNUSED_KEYS is not defined in ko.h (renamed upstream?)")
+            continue
+        if unescape(values[key]).encode("utf-8") in firmware:
             failed = True
             print(f"{key} is in FS5000_UNUSED_KEYS but present in {binary_path.name}")
 

@@ -44,13 +44,20 @@ summary+=("platformio.ini regenerated")
 
 step "2/7 regenerate FS-5000 fonts"
 (cd tools && "$PYTHON" build-fonts.py --fs5000-only) || fail "build-fonts.py --fs5000-only"
+# fontconv writes platform-default newlines: keep the repo's CRLF for the two files
+for f in font_small_ko_fs5000_color_21.h font_tiny_ko_color_14.h; do
+    sed -i -e 's/\o15$//' -e 's/$/\o15/' "platform.io/src/ui/fonts/$f" || fail "CRLF normalize $f"
+done
+other=$(git status --porcelain platform.io/src/ui/fonts | grep -v -e 'font_small_ko_fs5000_color_21\.h$' -e 'font_tiny_ko_color_14\.h$')
+[ -z "$other" ] || fail "font files other than the two FS-5000 headers changed:
+$other"
 summary+=("fonts regenerated (2 files)")
 
 step "3/7 clean build"
 (cd platform.io && "$PIO" run -e $ENVNAME -t clean) || fail "pio clean"
 LOG="$(mktemp)"
 (cd platform.io && "$PIO" run -e $ENVNAME) 2>&1 | tee "$LOG"
-[ "${PIPESTATUS[0]}" -eq 0 ] || fail "pio build"
+[ "${PIPESTATUS[0]}" -eq 0 ] || { rm -f "$LOG"; fail "pio build"; }
 warnings=$(grep -c "warning:" "$LOG")
 rm -f "$LOG"
 echo "compiler warnings: $warnings"
