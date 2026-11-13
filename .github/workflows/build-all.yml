@@ -11,14 +11,14 @@ on:
 
 jobs:
   build-all:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup base
         id: base
         uses: ./.github/actions/setup
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v6
         with:
           path: ~/.platformio/.cache
           key: ${{ runner.os }}-pio
@@ -35,7 +35,7 @@ jobs:
           python ../tools/sign.py
 
       - name: Save artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: radpro-firmware-snapshot
           overwrite: true
