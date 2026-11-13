@@ -40,8 +40,13 @@ static const Menu settingsMenu;
 Settings settings;
 
 static const Settings defaultSettings = {
+#if defined(FS5000)
+    .pulseSound = false,
+    .pulseLED = false,
+#else
     .pulseSound = true,
     .pulseLED = true,
+#endif
 
     .secondaryDoseUnits = DOSE_UNITS_CPM,
 
@@ -50,15 +55,27 @@ static const Settings defaultSettings = {
 #if defined(FS5000)
     .instantaneousAveraging = INSTANTANEOUSAVERAGING_ADAPTIVEPRECISION,
 #endif
+#if defined(FS5000)
+    .alertSound = false,
+    .alertVoice = false,
+    .alertVibration = false,
+    .alertPulseLED = false,
+    .alertDisplayFlash = false,
+#else
     .alertSound = true,
     .alertVoice = true,
     .alertVibration = true,
     .alertPulseLED = true,
     .alertDisplayFlash = true,
+#endif
 
     .tubeType = TUBE_TYPE_DEFAULT,
 
+#if defined(FS5000)
+    .loggingMode = DATALOG_LOGGINGMODE_10_SECONDS,
+#else
     .loggingMode = DATALOG_LOGGINGMODE_10_MINUTES,
+#endif
 
     .displayContrast = DISPLAY_CONTRAST_DEFAULT,
 #if defined(FS5000)
@@ -81,7 +98,12 @@ static const Settings defaultSettings = {
     .soundVoiceVolume = SOUND_VOICEVOLUME_VERYHIGH,
 #endif
 
+#if defined(FS5000)
+    .rtcTimeZone = RTC_TIMEZONE_P0900,
+    .powerUSBAutoPowerOn = true,
+#else
     .rtcTimeZone = RTC_TIMEZONE_P0000,
+#endif
 };
 
 // State

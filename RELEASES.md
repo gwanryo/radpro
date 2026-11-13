@@ -11,7 +11,7 @@
   * Compact 24 px title bar showing the time and the instantaneous averaging mode.
   * The cumulative dose start time is now recorded and shown. Cumulative dose reset moved to **Settings > Measurements > Cumulative dose > Reset**.
   * Settings are now saved within a second of any change (previously only on a normal power-off).
-  * New defaults: adaptive precision averaging, dusk theme.
+  * New defaults: adaptive precision averaging, dusk theme, 10-second datalog logging, all pulse and alert indications off, USB auto power-on on, UTC+9 time zone.
   * The settings format changed: installing this version resets settings and cumulative values.
 
 * **Bug fixes**
