@@ -1,9 +1,19 @@
 #!/bin/bash
 # Rad Pro: set the clock and time zone of a Bosean FS-5000 from this computer over USB.
 # Linux/macOS, best effort. Never fails the caller: always exits 0.
+# Total time is bounded by MAX_SECONDS (checked before every port probe and read).
+# Uses only integer read timeouts (macOS /bin/bash 3.2 compatible).
 
-MAX_SECONDS=13
+MAX_SECONDS=12
 PORTS_GLOB="/dev/ttyUSB* /dev/ttyACM* /dev/cu.usbserial* /dev/cu.wchusbserial* /dev/cu.usbmodem*"
+START_EPOCH=$(date +%s)
+DEADLINE_EPOCH=$((START_EPOCH + MAX_SECONDS))
+
+remaining() {
+    local r=$((DEADLINE_EPOCH - $(date +%s)))
+    [ $r -lt 0 ] && r=0
+    echo $r
+}
 
 # Time zone offset in hours with one decimal (e.g. 9, 5.5, -3.5), DST included.
 tz_hours() {
@@ -19,22 +29,27 @@ tz_hours() {
 }
 
 try_python() {  # $1 = port; returns 0 if device found (even if set failed)
-    python3 - "$1" "$(tz_hours)" <<'PY' 2>/dev/null
+    python3 - "$1" "$(tz_hours)" "$DEADLINE_EPOCH" <<'PY' 2>/dev/null
 import sys, time
 try:
     import serial
 except ImportError:
     sys.exit(2)
-port, tz = sys.argv[1], sys.argv[2]
-def req(s, text):
+port, tz, deadline = sys.argv[1], sys.argv[2], float(sys.argv[3])
+def req(s, text, wait=1.5):
+    wait = min(wait, deadline - time.time())
+    if wait <= 0:
+        return None
     s.reset_input_buffer()
     s.write((text + "\r\n").encode())
-    end = time.time() + 1.5
+    end = time.time() + wait
     while time.time() < end:
         line = s.readline().decode(errors="replace").strip()
         if line.startswith("OK") or line.startswith("ERROR"):
             return line
     return None
+if time.time() >= deadline:
+    sys.exit(1)
 try:
     s = serial.Serial(port, 115200, timeout=0.3, write_timeout=1)
 except Exception:
@@ -44,47 +59,65 @@ with s:
     if not ident or "Bosean FS-5000" not in ident:
         sys.exit(1)
     print("Found " + ident + " on " + port)
-    r1 = req(s, "SET deviceTime %d" % int(time.time()))
-    r2 = req(s, "SET deviceTimeZone " + tz)
-    if r1 == "OK" and r2 == "OK":
-        print("Device clock set (UTC %d, time zone UTC%s%s)." % (int(time.time()), "" if tz.startswith("-") else "+", tz))
-    else:
-        print("Device did not accept the clock settings (time: %s, time zone: %s)." % (r1, r2))
+    while True:
+        now = int(time.time())
+        r1 = req(s, "SET deviceTime %d" % now)
+        r2 = req(s, "SET deviceTimeZone " + tz)
+        if r1 == "OK" and r2 == "OK":
+            print("Device clock set (UTC %d, time zone UTC%s%s)." % (now, "" if tz.startswith("-") else "+", tz))
+            break
+        if deadline - time.time() <= 1:
+            print("Device did not accept the clock settings (time: %s, time zone: %s)." % (r1, r2))
+            break
+        time.sleep(1)
 sys.exit(0)
 PY
 }
 
 if [ "$(uname)" = "Darwin" ]; then STTY_DEV="-f"; else STTY_DEV="-F"; fi
 
-# Send a request on fd 3 and print the first OK/ERROR line (empty on timeout).
+# request TEXT MAXWAIT: send a request on fd 3 and print the first OK/ERROR line
+# (empty on timeout). Reads char by char so partial lines survive read timeouts.
 request() {
-    local line end=$((SECONDS + 2))
-    # drain pending input
-    while IFS= read -r -t 0.05 line <&3 2>/dev/null; do :; done
+    local wait=$2 rem c buf="" end
+    rem=$(remaining)
+    [ "$wait" -gt "$rem" ] && wait=$rem
+    [ "$wait" -le 0 ] && return
     printf '%s\r\n' "$1" >&3
-    while [ $SECONDS -le $end ]; do
-        if IFS= read -r -t 1 line <&3; then
-            line=${line%$'\r'}
-            case "$line" in OK*|ERROR*) echo "$line"; return;; esac
-        else
-            break
+    end=$(( $(date +%s) + wait ))
+    while [ "$(date +%s)" -lt "$end" ]; do
+        if IFS= read -r -n 1 -t 1 c <&3; then
+            if [ -z "$c" ] || [ "$c" = $'\n' ]; then      # end of line
+                buf=${buf%$'\r'}
+                case "$buf" in OK*|ERROR*) echo "$buf"; return;; esac
+                buf=""
+            else
+                buf="$buf$c"
+            fi
         fi
     done
 }
 
 try_stty() {  # $1 = port
-    local dev=$1 id r1 r2 tz
+    local dev=$1 id r1 r2 tz junk
+    [ "$(remaining)" -le 0 ] && return 1
     stty $STTY_DEV "$dev" 115200 cs8 -cstopb -parenb raw -echo clocal cread 2>/dev/null || return 1
     exec 3<>"$dev" 2>/dev/null || return 1
-    id=$(request "GET deviceId")
+    IFS= read -r -n 4096 -t 1 junk <&3    # drain stale input (integer timeout)
+    id=$(request "GET deviceId" 2)
     case "$id" in
         *"Bosean FS-5000"*) ;;
         *) exec 3>&-; return 1;;
     esac
     echo "Found $id on $dev"
     tz=$(tz_hours)
-    r1=$(request "SET deviceTime $(date -u +%s)")
-    r2=$(request "SET deviceTimeZone $tz")
+    while true; do
+        r1=$(request "SET deviceTime $(date -u +%s)" 2)
+        r2=$(request "SET deviceTimeZone $tz" 2)
+        [ "$r1" = "OK" ] && [ "$r2" = "OK" ] && break
+        [ "$(remaining)" -le 1 ] && break
+        sleep 1    # device may still be booting: retry until the deadline
+    done
     exec 3>&-
     if [ "$r1" = "OK" ] && [ "$r2" = "OK" ]; then
         echo "Device clock set (time zone UTC$tz)."
@@ -100,10 +133,10 @@ if command -v python3 >/dev/null 2>&1 && python3 -c 'import serial' 2>/dev/null;
 fi
 
 found=0
-end=$((SECONDS + MAX_SECONDS))
-while [ $found -eq 0 ] && [ $SECONDS -lt $end ]; do
+while [ $found -eq 0 ] && [ "$(remaining)" -gt 0 ]; do
     for dev in $PORTS_GLOB; do
         [ -e "$dev" ] || continue
+        [ "$(remaining)" -le 0 ] && break
         if [ $HAVE_PYSERIAL -eq 1 ]; then
             try_python "$dev" && found=1
         else
@@ -111,7 +144,7 @@ while [ $found -eq 0 ] && [ $SECONDS -lt $end ]; do
         fi
         [ $found -eq 1 ] && break
     done
-    [ $found -eq 0 ] && sleep 1
+    [ $found -eq 0 ] && [ "$(remaining)" -gt 1 ] && sleep 1
 done
 
 if [ $found -eq 0 ]; then
