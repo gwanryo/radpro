@@ -6,7 +6,9 @@ root = Path(__file__).resolve().parent.parent.parent
 platform = root / "platform.io"
 strings_path = platform / "src/system/strings/ko.h"
 fonts_path = platform / "src/ui/fonts"
-binary_path = Path(sys.argv[1]) if len(sys.argv) > 1 else platform / ".pio/build/bosean-fs5000-ko/firmware.bin"
+args = [a for a in sys.argv[1:] if not a.startswith("--")]
+check_unused = "--check-unused" in sys.argv[1:]
+binary_path = Path(args[0]) if args else platform / ".pio/build/bosean-fs5000-ko/firmware.bin"
 
 firmware = binary_path.read_bytes()
 ko_text = strings_path.read_text(encoding="utf-8")
@@ -58,6 +60,16 @@ for key, value in definitions:
     if missing:
         failed = True
         print(f"{key} missing in {font}: {''.join(sorted(missing))}")
+
+if check_unused:
+    # Strings excluded from the FS-5000 fonts (FS5000_UNUSED_KEYS) must not be in the image.
+    script = (root / "tools/build-fonts.py").read_text(encoding="utf-8")
+    block = re.search(r"FS5000_UNUSED_KEYS = \{(.*?)\}", script, re.DOTALL).group(1)
+    values = dict(definitions)
+    for key in re.findall(r'"(STRING_\w+)"', block):
+        if key in values and unescape(values[key]).encode("utf-8") in firmware:
+            failed = True
+            print(f"{key} is in FS5000_UNUSED_KEYS but present in {binary_path.name}")
 
 print(f"checked {checked} strings present in {binary_path.name}")
 sys.exit(1 if failed else 0)
