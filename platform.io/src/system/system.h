@@ -15,7 +15,7 @@
 
 #define FIRMWARE_AUTHOR "Gissio"
 #define FIRMWARE_NAME "Rad Pro"
-#define FIRMWARE_VERSION "3.1.2_ryo"
+#define FIRMWARE_VERSION "3.1.2"
 #if defined(FS5000)
 #define SETTINGS_VERSION {'R','a','d','P','r','o','K','1'}
 #else

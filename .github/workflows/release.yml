@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  UPSTREAM_TAG: 3.1.1
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup base
+        uses: ./.github/actions/setup
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+
+      - name: Build firmware
+        run: |
+          cd platform.io
+          pio run -e bosean-fs5000-ko
+
+      - name: Sign firmware
+        run: |
+          mkdir package
+          cd package
+          python ../tools/sign.py
+
+      - name: Read firmware version
+        run: |
+          VERSION=$(sed -n 's/^#define FIRMWARE_VERSION "\(.*\)".*/\1/p' platform.io/src/system/system.h | tr -d '\r')
+          test -n "$VERSION"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Check tag matches version
+        if: github.ref_type == 'tag'
+        run: |
+          if [ "$GITHUB_REF_NAME" != "$VERSION" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match FIRMWARE_VERSION $VERSION" >&2
+            exit 1
+          fi
+
+      - name: Download upstream release package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$UPSTREAM_TAG" -R Gissio/radpro -p "radpro-$UPSTREAM_TAG.zip" -D upstream
+
+      - name: Package release
+        run: |
+          python tools/package-release.py \
+            --upstream-zip "upstream/radpro-$UPSTREAM_TAG.zip" \
+            --signed-dir package \
+            --version "$VERSION" \
+            --out "radpro-$VERSION-bosean-fs5000-ko.zip"
+
+      - name: Extract release notes
+        run: |
+          awk -v v="## $VERSION" '
+            $0 == v { on = 1; next }
+            on && /^## / { exit }
+            on { print }
+          ' RELEASES.md | tr -d '\r' > notes.md
+          test -s notes.md
+
+      - name: Create draft release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --draft --title "Rad Pro $GITHUB_REF_NAME" --notes-file notes.md "radpro-$VERSION-bosean-fs5000-ko.zip"
+
+      - name: Save artifact
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: radpro-${{ env.VERSION }}-bosean-fs5000-ko
+          path: radpro-${{ env.VERSION }}-bosean-fs5000-ko.zip
