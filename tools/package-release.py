@@ -22,7 +22,7 @@ def main():
     devices = {}
     for d in sorted(glob.glob(os.path.join(args.signed_dir, "*", "firmware"))):
         device = os.path.basename(os.path.dirname(d))
-        bins = sorted(glob.glob(os.path.join(d, "*.bin")))
+        bins = sorted(glob.glob(os.path.join(d, "*-" + args.version + ".bin")))
         if bins:
             devices[device] = bins
     if not devices:
@@ -37,7 +37,7 @@ def main():
         keep_prefixes = [old + "lib/", old + "backup/"]
         keep_exact = {old, old + "README.md"}
         for device in devices:
-            if old + device + "/" not in zin.namelist():
+            if not any(n.startswith(old + device + "/install.") for n in zin.namelist()):
                 sys.exit("device folder missing in upstream zip: " + device)
             keep_exact.add(old + device + "/")
             keep_prefixes.append(old + device + "/install.")

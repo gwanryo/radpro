@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "[0-9]+.[0-9]+.[0-9]+*"
+      - '[0-9]*.[0-9]*.[0-9]*'
   workflow_dispatch:
 
 permissions:
@@ -44,7 +44,7 @@ jobs:
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Check tag matches version
-        if: github.ref_type == 'tag'
+        if: github.event_name == 'push'
         run: |
           if [ "$GITHUB_REF_NAME" != "$VERSION" ]; then
             echo "Tag $GITHUB_REF_NAME does not match FIRMWARE_VERSION $VERSION" >&2
@@ -67,22 +67,22 @@ jobs:
 
       - name: Extract release notes
         run: |
-          awk -v v="## $VERSION" '
+          tr -d '\r' < RELEASES.md | awk -v v="## $VERSION" '
             $0 == v { on = 1; next }
             on && /^## / { exit }
             on { print }
-          ' RELEASES.md | tr -d '\r' > notes.md
+          ' > notes.md
           test -s notes.md
 
       - name: Create draft release
-        if: github.ref_type == 'tag'
+        if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" --draft --title "Rad Pro $GITHUB_REF_NAME" --notes-file notes.md "radpro-$VERSION-bosean-fs5000-ko.zip"
 
       - name: Save artifact
-        if: github.ref_type != 'tag'
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: radpro-${{ env.VERSION }}-bosean-fs5000-ko
