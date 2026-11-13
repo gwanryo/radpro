@@ -6,7 +6,7 @@
 
   * New two-page **overview** measurement screen, replacing the instantaneous, average, cumulative and history views:
     * Page 1: instantaneous rate with confidence interval, logarithmic bar, average, maximum, cumulative dose, counts, start time and elapsed time.
-    * Page 2: compact instantaneous, average and secondary-unit values, averaging time and confidence interval, and a history graph with labeled 1-2-5 gridlines, warning/alarm lines and the latest value.
+    * Page 2: compact instantaneous, average and secondary-unit values, averaging time and confidence interval, and a history graph with 1-2-5 gridlines and value labels, warning/alarm lines and the latest value.
     * OK switches pages; left/right change the graph period on page 2; holding left resets the instantaneous rate, maximum and average.
   * Compact 24 px title bar showing the time and the instantaneous averaging mode.
   * The cumulative dose start time is now recorded and shown. Cumulative dose reset moved to **Settings > Measurements > Cumulative dose > Reset**.
