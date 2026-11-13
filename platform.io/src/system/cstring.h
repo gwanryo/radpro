@@ -40,6 +40,10 @@ void strcatTime(char *s, uint32_t time);
 void strcatFloat(char *s, float value, uint32_t fractionalDecimals);
 void strcatMetricValue(char *s, char *u, float value, int32_t minPrefixIndex);
 void strcatMetricPower(char *s, int32_t exponent, int32_t minPrefixIndex);
+#if defined(FS5000)
+void strcatMetricPrefixFromExponent(char *s, int32_t exponent);
+void strcatUInt32Grouped(char *s, uint32_t value);
+#endif
 
 void strcatUInt8Hex(char *s, uint8_t value);
 void strcatUInt16Hex(char *s, uint16_t value);

@@ -81,11 +81,14 @@
 
 // Data log reset success notification
 #define STRING_NOTIFICATION_DATALOG_RESET_SUCCESS "성공\n\n데이터 로그가 초기화되었습니다."
+#define STRING_NOTIFICATION_CUMULATIVE_RESET_CONFIRM "누적 선량을 초기화하시겠습니까?\n\n선량, 카운트, 시작 시각이 지워집니다."
+#define STRING_NOTIFICATION_CUMULATIVE_RESET_SUCCESS "누적 선량을 초기화했습니다."
 
 // Measurements title strings
 #define STRING_INSTANTANEOUS "순간"
 #define STRING_AVERAGE "평균"
 #define STRING_CUMULATIVE "누적"
+#define STRING_CUMULATIVE_DOSE "누적 선량"
 #define STRING_HISTORY "추이"
 #define STRING_ELECTRIC_FIELD "전기장"
 #define STRING_MAGNETIC_FIELD "자기장"
@@ -99,6 +102,12 @@
 // Measurements info strings
 #define STRING_ALERT_FAULT "고장"
 #define STRING_ALERT_DONE "완료"
+#define STRING_START "시작"
+#define STRING_ELAPSED "경과"
+#define STRING_AVERAGE_TIME "평균 시간"
+#define STRING_NOW "지금"
+#define STRING_WARNING "경고"
+#define STRING_ALARM "경보"
 
 // History period strings
 #define STRING_HISTORY_10_MINUTES "10분"
@@ -107,6 +116,12 @@
 #define STRING_HISTORY_1_WEEK "1주"
 #define STRING_HISTORY_1_MONTH "1개월"
 #define STRING_HISTORY_1_YEAR "1년"
+#define STRING_HISTORY_HALF_10_MINUTES "5분 전"
+#define STRING_HISTORY_HALF_1_HOUR "30분 전"
+#define STRING_HISTORY_HALF_1_DAY "12시간 전"
+#define STRING_HISTORY_HALF_1_WEEK "3.5일 전"
+#define STRING_HISTORY_HALF_1_MONTH "14일 전"
+#define STRING_HISTORY_HALF_1_YEAR "6개월 전"
 
 // Settings menu items
 #define STRING_SETTINGS "설정"

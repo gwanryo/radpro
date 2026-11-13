@@ -11,6 +11,9 @@
 #include "../system/cstring.h"
 #include "../ui/draw.h"
 #include "../ui/measurements.h"
+#if defined(FS5000)
+#include "../ui/overview.h"
+#endif
 
 // Landscape layout:
 //
@@ -340,8 +343,27 @@ static int16_t getMeasurementBarX(float value, float offset)
     return BAR_FRAME_LEFT + x;
 }
 
+#if defined(FS5000)
+#define BAR_STANDARD_ARGS , BAR_LABEL_HEIGHT, BAR_LABEL_OFFSETY, TICKS_SPACING, MEASUREMENT_PADDING_BOTTOM
+static void drawMeasurementBarAt(int16_t top, float value, int32_t minExponent, float warningValue, float alarmValue,
+                                 int16_t labelHeight, int16_t labelOffsetY, int16_t tickSpacing, int16_t paddingBottom)
+{
+    const int16_t frameTop = BAR_TICKS_HEIGHT + tickSpacing;
+    const int16_t contentTop = frameTop + 1;
+    const int16_t frameBottom = frameTop + BAR_FRAME_HEIGHT;
+    const int16_t bufferHeight = frameBottom + paddingBottom;
+#else
+#define BAR_STANDARD_ARGS
 static void drawMeasurementBarAt(int16_t top, float value, int32_t minExponent, float warningValue, float alarmValue)
 {
+    const int16_t labelHeight = BAR_LABEL_HEIGHT;
+    const int16_t labelOffsetY = BAR_LABEL_OFFSETY;
+    const int16_t frameTop = BAR_FRAME_TOP;
+    const int16_t contentTop = BAR_CONTENT_TOP;
+    const int16_t frameBottom = BAR_FRAME_BOTTOM;
+    const int16_t bufferHeight = BAR_IMAGEBUFFER_HEIGHT;
+#endif
+
     // Pre-calculations
     const LabelSpan *labelSpansTicks;
     const FillSpan *fillSpansTicksPrimary;
@@ -419,8 +441,8 @@ static void drawMeasurementBarAt(int16_t top, float value, int32_t minExponent, 
             labelOffset = textHalfWidth;
 
         drawCenteredText(buffer,
-                         &(mr_rectangle_t){labelX, top, labelWidth, BAR_LABEL_HEIGHT},
-                         &(mr_point_t){labelOffset, BAR_LABEL_OFFSETY});
+                         &(mr_rectangle_t){labelX, top, labelWidth, labelHeight},
+                         &(mr_point_t){labelOffset, labelOffsetY});
 
         labelTicksIndex++;
         labelX += labelWidth;
@@ -430,20 +452,20 @@ static void drawMeasurementBarAt(int16_t top, float value, int32_t minExponent, 
     // Render line
     mr_color_t line[BAR_IMAGEBUFFER_WIDTH];
 
-    for (int16_t y = 0; y < BAR_IMAGEBUFFER_HEIGHT; y++)
+    for (int16_t y = 0; y < bufferHeight; y++)
     {
         const FillSpan *fillSpan;
         if (y < (BAR_TICKS_HEIGHT - TICKS_SHORT))
             fillSpan = fillSpansTicksPrimary;
         else if (y < BAR_TICKS_HEIGHT)
             fillSpan = fillSpansTicksSecondary;
-        else if (y < BAR_FRAME_TOP)
+        else if (y < frameTop)
             fillSpan = fillSpansSpace;
-        else if (y < BAR_CONTENT_TOP)
+        else if (y < contentTop)
             fillSpan = fillSpansFrame;
-        else if (y < (BAR_CONTENT_TOP + BAR_CONTENT_HEIGHT))
+        else if (y < (contentTop + BAR_CONTENT_HEIGHT))
             fillSpan = fillSpansContent;
-        else if (y < BAR_FRAME_BOTTOM)
+        else if (y < frameBottom)
             fillSpan = fillSpansFrame;
         else
             fillSpan = fillSpansSpace;
@@ -461,7 +483,7 @@ static void drawMeasurementBarAt(int16_t top, float value, int32_t minExponent, 
             fillSpanIndex++;
         }
 
-        drawImage(&(mr_rectangle_t){BAR_IMAGEBUFFER_LEFT, top + BAR_LABEL_HEIGHT + y, BAR_IMAGEBUFFER_WIDTH, 1}, line);
+        drawImage(&(mr_rectangle_t){BAR_IMAGEBUFFER_LEFT, top + labelHeight + y, BAR_IMAGEBUFFER_WIDTH, 1}, line);
     }
 
     return;
@@ -469,7 +491,7 @@ static void drawMeasurementBarAt(int16_t top, float value, int32_t minExponent, 
 
 void drawMeasurementBar(float value, int32_t minExponent, float warningValue, float alarmValue)
 {
-    drawMeasurementBarAt(BAR_TOP, value, minExponent, warningValue, alarmValue);
+    drawMeasurementBarAt(BAR_TOP, value, minExponent, warningValue, alarmValue BAR_STANDARD_ARGS);
 }
 
 #if defined(DISPLAY_240X320)
@@ -525,8 +547,19 @@ void drawMeasurementOverviewValue(const char *valueString, const char *unitStrin
 
 void drawMeasurementOverviewBar(float value, int32_t minExponent, float warningValue, float alarmValue)
 {
-    drawMeasurementBarAt(OVERVIEW_BAR_TOP, value, minExponent, warningValue, alarmValue);
+    drawMeasurementBarAt(OVERVIEW_BAR_TOP, value, minExponent, warningValue, alarmValue BAR_STANDARD_ARGS);
 }
+
+#if defined(FS5000)
+#define COMPACTBAR_TOP 84
+#define COMPACTBAR_LABEL_HEIGHT FONT_TINY_LINE_HEIGHT
+
+void drawMeasurementCompactBar(float value, int32_t minExponent, float warningValue, float alarmValue)
+{
+    setFont(font_tiny);
+    drawMeasurementBarAt(COMPACTBAR_TOP, value, minExponent, warningValue, alarmValue, COMPACTBAR_LABEL_HEIGHT, 0, 0, 0);
+}
+#endif
 
 void drawMeasurementOverviewAlert(const char *alertString)
 {

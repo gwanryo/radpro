@@ -10,6 +10,9 @@
 #include <stdio.h>
 
 #include "../extras/rng.h"
+#if defined(FS5000)
+#include "../measurements/cumulative.h"
+#endif
 #include "../measurements/datalog.h"
 #include "../measurements/electricfield.h"
 #include "../measurements/magneticfield.h"
@@ -296,6 +299,9 @@ void processCommSet(const char *s)
 
         uint32_t intValue;
         float floatValue;
+#if defined(FS5000)
+        uint32_t previousDeviceTime = getDeviceTime();
+#endif
 
         switch ((enum SetAction)i)
         {
@@ -314,6 +320,9 @@ void processCommSet(const char *s)
         case SET_DEVICE_TIME:
             if (parseUInt32(&s, &intValue) && setDeviceTime(intValue))
             {
+#if defined(FS5000)
+                updateCumulativeDoseStartTime(previousDeviceTime, intValue);
+#endif
                 writeDatalogTimeChange();
                 pushCommOk();
             }

@@ -25,6 +25,9 @@
 #include "../system/events.h"
 #include "../system/power.h"
 #include "../system/settings.h"
+#if defined(FS5000)
+#include "../system/settingssave.h"
+#endif
 #include "../ui/menu.h"
 
 #define PULSE_DISPLAY_FLASH_TICKS ((uint32_t)(0.050 * SYSTICK_FREQUENCY))
@@ -273,6 +276,10 @@ void updateEvents(void)
 
         updateMeasurements();
         updatePowerState();
+#if defined(FS5000)
+        if (isPoweredOn())
+            saveSettingsIfChanged();
+#endif
         updateViewHeartbeat();
     }
 

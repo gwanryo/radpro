@@ -10,6 +10,10 @@
 #if !defined(HISTORY_H)
 #define HISTORY_H
 
+#if defined(FS5000)
+#include <stdint.h>
+#endif
+
 #include "../ui/view.h"
 
 void resetHistory(void);
@@ -19,6 +23,20 @@ void clearHistory(void);
 void loadHistory(void);
 
 void updateHistory(void);
+
+#if defined(FS5000)
+void resetHistoryTab(void);
+
+void selectHistoryTab(int32_t delta);
+
+const uint8_t *getHistoryLogValues(void);
+
+uint32_t getHistoryTimeTicksNum(void);
+
+const char *getHistoryPeriodString(void);
+
+const char *getHistoryHalfString(void);
+#endif
 
 void onHistoryViewEvent(ViewEvent event);
 

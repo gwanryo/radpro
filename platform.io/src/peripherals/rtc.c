@@ -7,6 +7,7 @@
  * License: MIT
  */
 
+#include "../measurements/cumulative.h"
 #include "../measurements/datalog.h"
 #include "../peripherals/rtc.h"
 #include "../system/cmath.h"
@@ -94,6 +95,13 @@ void getDeviceDateTime(RTCDateTime *dateTime)
 {
     getDateTimeFromTime(getDeviceTime() + getTimeZoneOffset(), dateTime);
 }
+
+#if defined(FS5000)
+void getLocalDateTimeFromDeviceTime(uint32_t time, RTCDateTime *dateTime)
+{
+    getDateTimeFromTime(time + getTimeZoneOffset(), dateTime);
+}
+#endif
 
 bool setDeviceTimeZone(float value)
 {
@@ -204,6 +212,10 @@ static const char *onRTCOptionMenuGetOption(menu_size_t index, MenuStyle *menuSt
 
 static void onRTCOptionMenuSelect(menu_size_t index)
 {
+#if defined(FS5000)
+    uint32_t previousDeviceTime = getDeviceTime();
+
+#endif
     RTCDateTime dateTime;
     getDeviceDateTime(&dateTime);
     normalizeDateTime(&dateTime);
@@ -237,8 +249,18 @@ static void onRTCOptionMenuSelect(menu_size_t index)
         break;
     }
 
+#if defined(FS5000)
+    uint32_t newDeviceTime = getTimeFromDateTime(&dateTime) - getTimeZoneOffset();
+
+    setDeviceTime(newDeviceTime);
+#else
     setDeviceDateTime(&dateTime);
+#endif
     rtcCurrentDateTime = dateTime;
+
+#if defined(FS5000)
+    updateCumulativeDoseStartTime(previousDeviceTime, newDeviceTime);
+#endif
 
     writeDatalogTimeChange();
 }

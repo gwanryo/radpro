@@ -26,6 +26,9 @@
 #include "../system/cmath.h"
 #include "../system/power.h"
 #include "../system/settings.h"
+#if defined(FS5000)
+#include "../system/settingssave.h"
+#endif
 #include "../system/statistics.h"
 #include "../system/system.h"
 #include "../ui/menu.h"
@@ -44,6 +47,9 @@ static const Settings defaultSettings = {
 
     .rateWarning = RATE_1_USVH,
     .rateAlarm = RATE_10_USVH,
+#if defined(FS5000)
+    .instantaneousAveraging = INSTANTANEOUSAVERAGING_ADAPTIVEPRECISION,
+#endif
     .alertSound = true,
     .alertVoice = true,
     .alertVibration = true,
@@ -55,6 +61,9 @@ static const Settings defaultSettings = {
     .loggingMode = DATALOG_LOGGINGMODE_10_MINUTES,
 
     .displayContrast = DISPLAY_CONTRAST_DEFAULT,
+#if defined(FS5000)
+    .displayTheme = DISPLAY_THEME_DUSK,
+#endif
 #if defined(SIMULATOR)
     .displayBrightness = DISPLAY_BRIGHTNESS_VERYHIGH,
 #else
@@ -88,6 +97,9 @@ typedef
     Dose tube;
     Dose dose;
     Settings settings;
+#if defined(FS5000)
+    uint32_t doseStartTime;
+#endif
 } State;
 
 static uint32_t stateOffset;
@@ -166,7 +178,7 @@ static const State *loadLatestState(void)
     return lastState;
 }
 
-static void appendState(State *state)
+static bool appendState(State *state)
 {
     if (stateOffset >= STATES_PAGE_LASTSTATE_OFFSET)
     {
@@ -176,9 +188,15 @@ static void appendState(State *state)
     }
 
     if (writeFlash(STATES_BASE + stateOffset, (uint8_t *)state, sizeof(State)))
+    {
         stateOffset += sizeof(State);
-    else
-        stateOffset = STATES_PAGE_LASTSTATE_OFFSET;
+
+        return true;
+    }
+
+    stateOffset = STATES_PAGE_LASTSTATE_OFFSET;
+
+    return false;
 }
 
 void initSettings(void)
@@ -201,9 +219,18 @@ void initSettings(void)
         setCumulativeDosePulseCount(state->dose.pulseCount);
         setTubeTime(state->tube.time);
         setTubePulseCount(state->tube.pulseCount);
+#if defined(FS5000)
+        setCumulativeDoseStartTime(state->doseStartTime);
+#endif
 
         settings = state->settings;
     }
+#if defined(FS5000)
+    else
+        setCumulativeDoseStartTime(0);
+
+    markSettingsSaved();
+#endif
 }
 
 void resetSettings(void)
@@ -216,6 +243,11 @@ void saveSettings(void)
     // Save state
     State state;
 
+#if defined(FS5000)
+    memset(&state, 0, sizeof(state));
+
+    state.doseStartTime = getCumulativeDoseStartTime();
+#endif
     state.dose.time = getCumulativeDoseTime();
     state.dose.pulseCount = getCumulativeDosePulseCount();
     state.tube.time = getTubeTime();
@@ -223,7 +255,12 @@ void saveSettings(void)
 
     state.settings = settings;
 
+#if defined(FS5000)
+    if (appendState(&state))
+        markSettingsSaved();
+#else
     appendState(&state);
+#endif
 }
 
 // Settings menu

@@ -1,0 +1,2 @@
+*.sh text eol=lf
+tools/host/*.py text eol=lf

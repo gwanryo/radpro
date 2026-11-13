@@ -175,6 +175,28 @@ float getAverageRate(void)
     return average.snapshotRate.value;
 }
 
+#if defined(FS5000)
+float getAverageRateConfidence(void)
+{
+    return average.snapshotRate.confidence;
+}
+
+uint32_t getAverageRateTime(void)
+{
+    return average.snapshotRate.time;
+}
+
+bool isAverageRateDone(void)
+{
+    return average.done;
+}
+
+void clearAverageRateValues(void)
+{
+    clearAverageRate();
+}
+
+#endif
 // Average rate view
 
 static const char *getAverageRateAlertString(void)

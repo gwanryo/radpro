@@ -72,6 +72,13 @@ static void clearInstantaneousRate(void)
         instantaneousTab = INSTANTANEOUS_TAB_BAR;
 }
 
+#if defined(FS5000)
+void clearInstantaneousRateValues(void)
+{
+    clearInstantaneousRate();
+}
+
+#endif
 static bool isTimedAveraging(void)
 {
     return (settings.instantaneousAveraging >= INSTANTANEOUSAVERAGING_60_SECONDS);
@@ -224,6 +231,23 @@ static MeasurementStyle getInstantaneousRateMeasurementStyle(void)
         return MEASUREMENTSTYLE_NORMAL;
 }
 
+#if defined(FS5000)
+float getInstantaneousRateConfidence(void)
+{
+    return instantaneous.rate.confidence;
+}
+
+float getInstantaneousMaxRate(void)
+{
+    return instantaneous.maxValue;
+}
+
+MeasurementStyle getInstantaneousRateStyle(void)
+{
+    return getInstantaneousRateMeasurementStyle();
+}
+
+#endif
 static void drawInstantaneousRateValue(void)
 {
     char valueString[32] = "";
@@ -270,7 +294,10 @@ static void drawInstantaneousRateTab(void)
     drawMeasurementInfo(keyString, valueString, unitString, getInstantaneousRateMeasurementStyle());
 }
 
-static void drawInstantaneousRateBar(void (*drawBar)(float value, int32_t minExponent, float warningValue, float alarmValue))
+#if !defined(FS5000)
+static
+#endif
+void drawInstantaneousRateBar(void (*drawBar)(float value, int32_t minExponent, float warningValue, float alarmValue))
 {
     float scale = pulseUnits[settings.doseUnits].rate.scale;
     float microSievertPerHourScale = scale / pulseUnits[DOSE_UNITS_SIEVERTS].rate.scale;
@@ -335,7 +362,7 @@ void onInstantaneousRateViewEvent(ViewEvent event)
 
 // Overview view
 
-#if defined(DISPLAY_240X320)
+#if defined(DISPLAY_240X320) && !defined(FS5000)
 
 static void drawOverviewRow(uint32_t rowIndex, const char *keyString, float value, const Unit *unit)
 {
@@ -412,6 +439,13 @@ static cstring instantaneousMenuOptions[] = {
     STRING_10_SECONDS,
 };
 
+#if defined(FS5000)
+const char *getInstantaneousAveragingString(void)
+{
+    return getString(instantaneousMenuOptions[settings.instantaneousAveraging]);
+}
+
+#endif
 static const char *onInstantaneousMenuGetOption(menu_size_t index, MenuStyle *menuStyle)
 {
     *menuStyle = (index == settings.instantaneousAveraging);

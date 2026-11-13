@@ -14,6 +14,9 @@
 
 #include "../measurements/cumulative.h"
 #include "../measurements/pulses.h"
+#if defined(FS5000)
+#include "../ui/measurements.h"
+#endif
 #include "../ui/menu.h"
 #include "../ui/view.h"
 
@@ -27,12 +30,26 @@ float getDeadTimeCompensationFactor(void);
 
 float getInstantaneousRate(void);
 
+#if defined(FS5000)
+float getInstantaneousRateConfidence(void);
+
+float getInstantaneousMaxRate(void);
+
+MeasurementStyle getInstantaneousRateStyle(void);
+
+void clearInstantaneousRateValues(void);
+
+void drawInstantaneousRateBar(void (*drawBar)(float value, int32_t minExponent, float warningValue, float alarmValue));
+
+const char *getInstantaneousAveragingString(void);
+#endif
+
 bool isInstantaneousRateConfidenceGood(void);
 
 AlertLevel getInstantaneousRateAlertLevel(void);
 
 void onInstantaneousRateViewEvent(ViewEvent event);
-#if defined(DISPLAY_240X320)
+#if defined(DISPLAY_240X320) && !defined(FS5000)
 void onOverviewViewEvent(ViewEvent event);
 #endif
 

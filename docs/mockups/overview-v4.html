@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FS-5000 통합 화면 시안 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600&family=Noto+Sans:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --page: #dfe3e6; --ink: #1b2126; --muted: #56616b; --rule: #b9c1c8; --bezel: #23272b;
+    /* Rad Pro 펌웨어 팔레트 (ui/draw.c) — 낮 테마 */
+    --active: #1f1f1f; --neutral: #535353; --bar: #fcfcfc; --shadow: #c9c9c9; --bg: #f7f7f7;
+    --accent: #2d548b; --tint: #9cc1f5; --frame: #ffffff; --frame-line: #bebebe; --tick: #707070;
+    --run: #008300; --warn: #fe9413; --alarm: #e30019; --alarm-tint: #ffbdb3;
+    --value: var(--accent); --fill: var(--accent); --level: 26%; --zoom: 1;
+  }
+  body:has(#t-dusk:checked) {
+    --active: #e9e9e9; --neutral: #b0b0b0; --bar: #2e2e2e; --shadow: #161616; --bg: #1f1f1f;
+    --accent: #84b3ef; --tint: #3d526d; --frame: #363636; --frame-line: #5e5e5e; --tick: #8c8c8c;
+    --run: #198100; --warn: #fa7d00; --alarm: #e1000e; --alarm-tint: #7a020a;
+  }
+  body:has(#t-night:checked) {
+    --active: #eaa75e; --neutral: #c78842; --bar: #000; --shadow: #000; --bg: #000;
+    --accent: #38a784; --tint: #10211a; --frame: #000; --frame-line: #78532c; --tick: #9c6a34;
+    --run: #008800; --warn: #e67800; --alarm: #e90f20; --alarm-tint: #460000;
+  }
+  body:has(#s-alarm:checked) { --value: var(--alarm); --fill: var(--alarm); --level: 59%; }
+  body:has(#z-2:checked) { --zoom: 1.6; }
+  body:has(#z-3:checked) { --zoom: 2; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 400 15px/1.65 "Noto Sans KR", sans-serif; }
+  .page { max-width: 1240px; margin-inline: auto; padding: 40px 28px 80px; }
+  h1 { font-size: 30px; line-height: 1.25; margin: 0 0 10px; font-weight: 600; }
+  h2 { font-size: 21px; margin: 52px 0 6px; font-weight: 600; }
+  h3 { font-size: 17px; margin: 0 0 2px; font-weight: 600; }
+  p { margin: 0 0 12px; max-width: 780px; }
+  .lede { color: var(--muted); }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 24px; margin-block: 24px 8px; padding-block: 12px; border-block: 1px solid var(--rule); position: sticky; top: 0; background: var(--page); z-index: 5; }
+  fieldset { border: 0; padding: 0; margin: 0; display: flex; align-items: center; gap: 6px; }
+  legend { float: left; margin-right: 10px; color: var(--muted); font-size: 13px; padding: 0; }
+  .controls input { position: absolute; opacity: 0; }
+  .controls label { padding: 4px 12px; border: 1px solid var(--rule); border-radius: 3px; cursor: pointer; font-size: 14px; }
+  .controls input:checked + label { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .controls input:focus-visible + label { outline: 2px solid #1463c4; outline-offset: 2px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(264px * var(--zoom) + 10px), 1fr)); gap: 40px 28px; margin-top: 18px; }
+  .opt .tag { color: var(--muted); font-size: 13px; }
+  .opt ul { margin: 10px 0 0; padding-left: 18px; font-size: 14px; color: var(--muted); }
+  .opt li { margin-bottom: 3px; }
+  .opt li b { color: var(--ink); font-weight: 600; }
+
+  .bezel { width: calc(264px * var(--zoom)); height: calc(344px * var(--zoom)); padding: calc(12px * var(--zoom)); background: var(--bezel); border-radius: 10px; margin-top: 12px; }
+  .bezel.strip { height: calc(48px * var(--zoom)); }
+  .lcd { position: relative; width: 240px; height: 320px; overflow: hidden; background: var(--bg); color: var(--active);
+         font-family: "Noto Sans", "Noto Sans KR", sans-serif; font-weight: 600; transform: scale(var(--zoom)); transform-origin: 0 0; }
+  .strip .lcd { height: 24px; }
+  .lcd * { position: absolute; white-space: nowrap; margin: 0; }
+  .lcd svg *, .lcd .row span, .lcd .ic > *, .lcd .tt span { position: static; }
+
+  /* 상단 바: 새 14 px 글꼴, 높이 24 px */
+  .tb { left: 0; top: 0; width: 240px; height: 24px; background: var(--bar); border-bottom: 1px solid var(--shadow); }
+  .tt { left: 12px; top: 1px; display: flex; gap: 10px; }
+  .ic { right: 12px; top: 0; height: 23px; display: flex; align-items: center; gap: 6px; }
+  .bell { width: 12px; height: 14px; fill: var(--neutral); }
+  .batt { width: 18px; height: 10px; }
+  .lock, .spk { width: 12px; height: 13px; fill: var(--neutral); }
+
+  /* 글꼴: 14 px(새) · 21 px · 54/64 px 숫자(새) */
+  .xs { font-size: 14px; line-height: 20px; }
+  .s { font-size: 21px; line-height: 30px; }
+  .n54 { font-size: 54px; line-height: 54px; letter-spacing: -0.5px; color: var(--value); }
+  .n64 { font-size: 64px; line-height: 64px; letter-spacing: -0.5px; color: var(--value); }
+  .k { color: var(--neutral); }
+  .v { color: var(--value); }
+  .u { color: var(--neutral); }
+  .r { right: 12px; text-align: right; }
+  .c { left: 0; width: 240px; text-align: center; }
+  .row { left: 12px; width: 216px; display: flex; justify-content: space-between; }
+  .row .u { margin-left: 5px; }
+
+  .ticks { left: 12px; width: 216px; height: 8px;
+           background: linear-gradient(var(--tick), var(--tick)) 0 100% / 1px 4px no-repeat,
+                       repeating-linear-gradient(90deg, var(--tick) 0 1px, transparent 1px 36px) 0 100% / 216px 4px no-repeat,
+                       repeating-linear-gradient(90deg, var(--tick) 0 1px, transparent 1px 72px) 0 0 / 217px 8px no-repeat; }
+  .track { left: 12px; width: 216px; height: 18px; border: 1px solid var(--frame-line); background: var(--frame); }
+  .track i { left: 0; top: 0; bottom: 0; width: var(--level); background: var(--fill); }
+  .dots { left: 0; width: 240px; display: flex; justify-content: center; gap: 6px; }
+  .dots b { position: static; width: 6px; height: 6px; background: var(--frame-line); }
+  .dots b.on { background: var(--active); }
+
+  .chart { left: 12px; }
+  .chart rect.frame { fill: var(--frame); stroke: var(--frame-line); }
+  .chart line.grid { stroke: var(--frame-line); stroke-dasharray: 2 2; }
+  .chart path.area { fill: var(--tint); }
+  .chart path.line { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .chart line.tick { stroke: var(--tick); }
+
+  table { border-collapse: collapse; margin-top: 14px; font-size: 14px; max-width: 1000px; }
+  th, td { text-align: left; vertical-align: top; padding: 7px 16px 7px 0; border-bottom: 1px solid var(--rule); }
+  th { font-weight: 600; color: var(--muted); font-size: 13px; }
+  code { font-size: 13px; }
+
+  .tri { width: 0; height: 0; border-block: 5px solid transparent; }
+  .tri.l { border-right: 6px solid var(--active); }
+  .tri.r { border-left: 6px solid var(--active); }
+  .per { display: flex; align-items: center; gap: 6px; }
+  .per > * { position: static !important; }
+  .cell { display: flex; flex-direction: column; }
+  .cell > * { position: static !important; }
+  .chart text { font: 600 14px "Noto Sans", "Noto Sans KR", sans-serif; fill: var(--neutral); }
+  .chart rect.knock { fill: var(--frame); }
+  .chart line.warn { stroke: var(--warn); stroke-width: 1; stroke-dasharray: 4 3; }
+  .chart text.warnlabel { fill: var(--warn); }
+  .chart circle.now { fill: var(--value); stroke: var(--frame); stroke-width: 2; }
+  .chart line.vt { stroke: var(--frame-line); }
+  .chart line.grid { stroke: var(--tick); }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>FS-5000 통합 화면 시안 2</h1>
+  <p class="lede">그래프를 통합 화면 2쪽으로 옮겼습니다. 측정 화면은 이 하나만 남고 쪽이 두 개라, 맨 아래 점도 두 개입니다. 상단 바는 날짜를 빼고 시각과 평균 방식만 둡니다. 240×320 픽셀 좌표이고, 글꼴은 14 px(새), 21 px, 54 px 숫자(새)입니다.</p>
+  <div class="controls">
+    <fieldset><legend>테마</legend>
+      <input type="radio" name="t" id="t-day" checked><label for="t-day">낮</label>
+      <input type="radio" name="t" id="t-dusk"><label for="t-dusk">저녁</label>
+      <input type="radio" name="t" id="t-night"><label for="t-night">밤</label>
+    </fieldset>
+    <fieldset><legend>상태</legend>
+      <input type="radio" name="s" id="s-normal" checked><label for="s-normal">평상시</label>
+      <input type="radio" name="s" id="s-alarm"><label for="s-alarm">경보</label>
+    </fieldset>
+    <fieldset><legend>배율</legend>
+      <input type="radio" name="z" id="z-1" checked><label for="z-1">1×</label>
+      <input type="radio" name="z" id="z-2"><label for="z-2">1.6×</label>
+      <input type="radio" name="z" id="z-3"><label for="z-3">2×</label>
+    </fieldset>
+  </div>
+
+  
+  <h2>두 쪽</h2>
+  <p>OK 짧게 누르기로 1쪽과 2쪽을 오갑니다. 2쪽에서는 왼쪽·오른쪽 짧게 누르기로 그래프 기간을 바꿉니다(10분 → 1시간 → 1일 → 1주 → 1개월 → 1년). 기간 글자 양옆의 삼각형이 그 힌트입니다.</p>
+  <div class="grid">
+    <div class="opt">
+      <h3>1쪽 · 값</h3>
+      <div class="tag">이전 시안과 같고 상단 바만 바뀜</div>
+      <div class="bezel"><div class="lcd">
+        <div class="tb"><span class="tt xs"><span>15:14</span><span class="k">적응형 (빠름)</span></span><span class="ic"><svg class="bell" viewBox="0 0 15 17"><path d="M7.5 0a1.3 1.3 0 0 1 1.3 1.3v.6A5 5 0 0 1 12.5 7v4.5l2 2.2V15H.5v-1.3l2-2.2V7a5 5 0 0 1 3.7-5.1v-.6A1.3 1.3 0 0 1 7.5 0Zm-2 15.6h4a2 2 0 0 1-4 0Z"/></svg><svg class="batt" viewBox="0 0 22 12"><rect x="1" y="1" width="18" height="10" rx="1.5" fill="none" stroke="var(--run)" stroke-width="2"/><rect x="20" y="4" width="2" height="4" fill="var(--run)"/><rect x="3" y="3" width="9" height="6" fill="var(--run)"/></svg></span></div>
+        <span class="n54" style="left:12px;top:27px">0.142</span>
+        <span class="s u r" style="top:30px">µSv/h</span>
+        <span class="xs v r" style="top:59px">±12%</span>
+        <span class="xs k" style="left:73px;top:86px">1 µ</span><span class="xs k" style="left:145px;top:86px">1 m</span>
+        <div class="ticks" style="top:106px"></div>
+        <div class="track" style="top:114px"><i></i></div>
+        <div class="row s" style="top:140px"><span class="k">평균</span><span>0.128<span class="u">µSv/h</span></span></div>
+        <div class="row s" style="top:170px"><span class="k">최대</span><span>0.317<span class="u">µSv/h</span></span></div>
+        <div class="row s" style="top:200px"><span class="k">누적 선량</span><span>1.284<span class="u">µSv</span></span></div>
+        <div class="row s" style="top:230px"><span class="k">카운트</span><span>11,849</span></div>
+        <div class="row xs" style="top:270px"><span><span class="k">시작 </span>11.13 05:13</span><span><span class="k">경과 </span>10:01:12</span></div>
+        <div class="dots" style="top:302px"><b class="on"></b><b></b></div>
+      </div></div>
+    </div>
+    <div class="opt">
+      <h3>2쪽 · 그래프 (10분)</h3>
+      <div class="tag">순간·평균은 작게, 그래프는 크게</div>
+      <div class="bezel"><div class="lcd">
+        <div class="tb"><span class="tt xs"><span>15:14</span><span class="k">적응형 (빠름)</span></span><span class="ic"><svg class="bell" viewBox="0 0 15 17"><path d="M7.5 0a1.3 1.3 0 0 1 1.3 1.3v.6A5 5 0 0 1 12.5 7v4.5l2 2.2V15H.5v-1.3l2-2.2V7a5 5 0 0 1 3.7-5.1v-.6A1.3 1.3 0 0 1 7.5 0Zm-2 15.6h4a2 2 0 0 1-4 0Z"/></svg><svg class="batt" viewBox="0 0 22 12"><rect x="1" y="1" width="18" height="10" rx="1.5" fill="none" stroke="var(--run)" stroke-width="2"/><rect x="20" y="4" width="2" height="4" fill="var(--run)"/><rect x="3" y="3" width="9" height="6" fill="var(--run)"/></svg></span></div>
+        <div class="cell" style="left:12px;top:27px"><span class="xs k">순간</span><span class="s v">0.142</span></div>
+        <div class="cell" style="left:96px;top:27px"><span class="xs k">평균</span><span class="s">0.128</span></div>
+        <div class="cell" style="right:12px;top:27px;align-items:flex-end"><span class="xs k">cpm</span><span class="s">21.8</span></div>
+        <div class="row xs" style="top:78px"><span><span class="k">평균 시간 </span>2:15:40</span><span>±3.8%</span></div>
+        <svg class="chart" data-h="176" data-seed="7" style="top:102px;left:13px" width="214" height="176"></svg>
+        <div class="row xs" style="top:282px"><span class="per"><i class="tri l"></i><span>10분</span><i class="tri r"></i></span><span class="k">지금</span></div>
+        <span class="xs k" style="left:13px;width:201px;text-align:center;top:282px">5분 전</span>
+        <div class="dots" style="top:308px"><b></b><b class="on"></b></div>
+      </div></div>
+    </div>
+    <div class="opt">
+      <h3>2쪽 · 그래프 (1주)</h3>
+      <div class="tag">◀ ▶로 기간 변경</div>
+      <div class="bezel"><div class="lcd">
+        <div class="tb"><span class="tt xs"><span>15:14</span><span class="k">적응형 (빠름)</span></span><span class="ic"><svg class="bell" viewBox="0 0 15 17"><path d="M7.5 0a1.3 1.3 0 0 1 1.3 1.3v.6A5 5 0 0 1 12.5 7v4.5l2 2.2V15H.5v-1.3l2-2.2V7a5 5 0 0 1 3.7-5.1v-.6A1.3 1.3 0 0 1 7.5 0Zm-2 15.6h4a2 2 0 0 1-4 0Z"/></svg><svg class="batt" viewBox="0 0 22 12"><rect x="1" y="1" width="18" height="10" rx="1.5" fill="none" stroke="var(--run)" stroke-width="2"/><rect x="20" y="4" width="2" height="4" fill="var(--run)"/><rect x="3" y="3" width="9" height="6" fill="var(--run)"/></svg></span></div>
+        <div class="cell" style="left:12px;top:27px"><span class="xs k">순간</span><span class="s v">0.142</span></div>
+        <div class="cell" style="left:96px;top:27px"><span class="xs k">평균</span><span class="s">0.128</span></div>
+        <div class="cell" style="right:12px;top:27px;align-items:flex-end"><span class="xs k">cpm</span><span class="s">21.8</span></div>
+        <div class="row xs" style="top:78px"><span><span class="k">평균 시간 </span>2:15:40</span><span>±3.8%</span></div>
+        <svg class="chart" data-h="176" data-seed="23" style="top:102px;left:13px" width="214" height="176"></svg>
+        <div class="row xs" style="top:282px"><span class="per"><i class="tri l"></i><span>1주</span><i class="tri r"></i></span><span class="k">지금</span></div>
+        <span class="xs k" style="left:13px;width:201px;text-align:center;top:282px">3.5일 전</span>
+        <div class="dots" style="top:308px"><b></b><b class="on"></b></div>
+      </div></div>
+    </div>
+  </div>
+
+  <h2>2쪽 그래프에서 바뀐 점</h2>
+  <ul style="max-width:780px;font-size:14px;color:var(--muted);padding-left:18px">
+    <li><b style="color:var(--ink)">가로선 값</b>: 가로선마다 값을 적는다(1, 0.5, 0.2, 0.1, 0.05). 단위는 맨 위 값 옆에 한 번만 쓴다. 지금은 맨 위·맨 아래 두 값만 "µSv/h: 1 µ" 형태로 나온다.</li>
+    <li><b style="color:var(--ink)">세로 범위</b>: 지금은 범위를 10배 단위로 잡아서, 0.1~0.3 µSv/h 데이터가 0.01~1 범위에 그려지면 아래 절반이 빈다. 범위와 가로선을 1·2·5 단위로 잡으면 데이터가 세로를 채운다.</li>
+    <li><b style="color:var(--ink)">경고선</b>: 선량률 경고를 설정했으면 그 값에 주황 점선과 "경고"를 그린다. 경고값을 넘는 부분을 다른 색으로 칠하는 것은 지금 펌웨어에도 있다.</li>
+    <li><b style="color:var(--ink)">현재 위치</b>: 오른쪽 끝 최신 값에 점을 찍는다.</li>
+    <li><b style="color:var(--ink)">시간축</b>: 아래 왼쪽에 기간, 가운데에 절반 시점, 오른쪽에 "지금"을 적는다. 세로 눈금선은 지금처럼 기간마다 정해진 개수로 긋는다.</li>
+    <li>그래프 폭은 지금과 같은 201 px(데이터 칸 201개)라 기록 구조는 바뀌지 않는다. 높이는 176 px.</li>
+    <li>위쪽 값: 순간(색으로 강조), 평균, 순간 cpm, 평균 시간과 평균 신뢰구간. 이전 시안의 2쪽 내용을 작게 옮겼다.</li>
+  </ul>
+
+  <h2>상단 바</h2>
+  <div class="grid">
+    <div class="opt"><h3>평상시</h3><div class="bezel strip"><div class="lcd"><div class="tb"><span class="tt xs"><span>15:14</span><span class="k">적응형 (빠름)</span></span><span class="ic"><svg class="bell" viewBox="0 0 15 17"><path d="M7.5 0a1.3 1.3 0 0 1 1.3 1.3v.6A5 5 0 0 1 12.5 7v4.5l2 2.2V15H.5v-1.3l2-2.2V7a5 5 0 0 1 3.7-5.1v-.6A1.3 1.3 0 0 1 7.5 0Zm-2 15.6h4a2 2 0 0 1-4 0Z"/></svg><svg class="batt" viewBox="0 0 22 12"><rect x="1" y="1" width="18" height="10" rx="1.5" fill="none" stroke="var(--run)" stroke-width="2"/><rect x="20" y="4" width="2" height="4" fill="var(--run)"/><rect x="3" y="3" width="9" height="6" fill="var(--run)"/></svg></span></div></div></div></div>
+    <div class="opt"><h3>고정 평균</h3><div class="bezel strip"><div class="lcd"><div class="tb"><span class="tt xs"><span>15:14</span><span class="k">10초</span></span><span class="ic"><svg class="bell" viewBox="0 0 15 17"><path d="M7.5 0a1.3 1.3 0 0 1 1.3 1.3v.6A5 5 0 0 1 12.5 7v4.5l2 2.2V15H.5v-1.3l2-2.2V7a5 5 0 0 1 3.7-5.1v-.6A1.3 1.3 0 0 1 7.5 0Zm-2 15.6h4a2 2 0 0 1-4 0Z"/></svg><svg class="batt" viewBox="0 0 22 12"><rect x="1" y="1" width="18" height="10" rx="1.5" fill="none" stroke="var(--run)" stroke-width="2"/><rect x="20" y="4" width="2" height="4" fill="var(--run)"/><rect x="3" y="3" width="9" height="6" fill="var(--run)"/></svg></span></div></div></div></div>
+    <div class="opt"><h3>아이콘이 모두 켜졌을 때</h3><div class="bezel strip"><div class="lcd"><div class="tb"><span class="tt xs"><span>15:14</span><span class="k">적응형 (정밀)</span></span><span class="ic"><svg class="spk" viewBox="0 0 12 13"><path d="M0 4h3l4-4v13L3 9H0Z"/><path d="M9 3.5a4 4 0 0 1 0 6" stroke="var(--neutral)" stroke-width="1.5" fill="none"/></svg><svg class="lock" viewBox="0 0 12 13"><path d="M3 5V3.5a3 3 0 0 1 6 0V5h1.5v8h-9V5Zm1.5 0h3V3.5a1.5 1.5 0 0 0-3 0Z"/></svg><svg class="bell" viewBox="0 0 15 17"><path d="M7.5 0a1.3 1.3 0 0 1 1.3 1.3v.6A5 5 0 0 1 12.5 7v4.5l2 2.2V15H.5v-1.3l2-2.2V7a5 5 0 0 1 3.7-5.1v-.6A1.3 1.3 0 0 1 7.5 0Zm-2 15.6h4a2 2 0 0 1-4 0Z"/></svg><svg class="batt" viewBox="0 0 22 12"><rect x="1" y="1" width="18" height="10" rx="1.5" fill="none" stroke="var(--run)" stroke-width="2"/><rect x="20" y="4" width="2" height="4" fill="var(--run)"/><rect x="3" y="3" width="9" height="6" fill="var(--run)"/></svg></span></div></div></div></div>
+  </div>
+  <p style="margin-top:14px;color:var(--muted);font-size:14px">날짜를 빼서 아이콘이 모두 켜져도 "적응형 (정밀)"까지 한 줄에 들어갑니다.</p>
+
+  <h2>필요한 작업</h2>
+  <table>
+    <tr><th>항목</th><th>내용</th></tr>
+    <tr><td>화면 구성</td><td>측정 화면 순환에서 순간·평균·누적·추이 화면을 빼고 통합 화면 하나만 남긴다(FS-5000 한정).</td></tr>
+    <tr><td>키</td><td>OK 짧게 = 쪽 전환. 2쪽에서 왼쪽·오른쪽 짧게 = 기간 변경. 왼쪽 길게 = 초기화(범위는 정해야 함).</td></tr>
+    <tr><td>그래프</td><td><code>drawHistory</code>가 위치·높이를 받게 하고, 가로선 값·경고선·현재 점·시간축 글자를 추가한다.</td></tr>
+    <tr><td>글꼴</td><td>14 px(새, 쓰는 글자만), 54 px 숫자(새), 21 px에 새 글자 추가. 남은 플래시 16 KB 안에서 가능.</td></tr>
+    <tr><td>새 문자열</td><td>시작, 경과, 누적 선량, 평균 시간, 지금, 전, 경고 등. 모든 언어 파일에 넣어야 빌드된다.</td></tr>
+    <tr><td>시작 시각</td><td>누적 초기화 때 RTC 시각을 설정 영역에 저장한다.</td></tr>
+  </table>
+</div>
+<script>
+  function chart(svg) {
+    let seed = +svg.dataset.seed;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const H = +svg.dataset.h, W = 201, NS = 'http://www.w3.org/2000/svg';
+    const LO = 0.05, HI = 1, WARN = 0.5;                       // 1·2·5 단위 범위 (µSv/h)
+    const vals = []; let z = 0;
+    for (let i = 0; i < W; i++) { z += (rnd() - 0.5) * 0.12 - z * 0.12; let v = 0.128 * Math.exp(z); if (i >= 140 && i < 165) v = Math.max(v, 0.317 * Math.exp(-(i - 140) / 6)); vals.push(v); }
+    vals[W - 1] = 0.142;
+    const y = v => (1 - Math.log(v / LO) / Math.log(HI / LO)) * (H - 1);
+    const add = (tag, attrs, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text) e.textContent = text; svg.appendChild(e); return e; };
+    add('rect', { class: 'frame', x: .5, y: .5, width: W - 1, height: H - 1 });
+    for (let n = 1; n < 10; n++) { const x = Math.round(n * (W - 1) / 10) + .5; add('line', { class: 'vt', x1: x, x2: x, y1: 1, y2: H - 1 }); }
+    const d = vals.map((v, i) => `${i ? 'L' : 'M'}${i + .5} ${y(v).toFixed(1)}`).join(' ');
+    add('path', { class: 'area', d: d + ` L${W - .5} ${H - 1} L.5 ${H - 1} Z` });
+    add('path', { class: 'line', d });
+    const grid = [[1, '1 µSv/h'], [0.5, '0.5'], [0.2, '0.2'], [0.1, '0.1'], [0.05, '0.05']];
+    grid.forEach(([v]) => { if (v > LO && v < HI && v !== WARN) { const yy = Math.round(y(v)) + .5; add('line', { class: 'grid', x1: 1, x2: W - 1, y1: yy, y2: yy }); } });
+    const wy = Math.round(y(WARN)) + .5;
+    add('line', { class: 'warn', x1: 1, x2: W - 1, y1: wy, y2: wy });
+    add('text', { class: 'warnlabel', x: W - 6, y: wy - 3, 'text-anchor': 'end' }, '경고');
+    grid.forEach(([v, t]) => {
+      const yy = Math.round(y(v));
+      const tx = add('text', { x: 4, y: v === HI ? yy + 15 : yy - 3 }, t); const b = tx.getBBox();
+      const k = document.createElementNS(NS, 'rect'); k.setAttribute('class', 'knock');
+      k.setAttribute('x', b.x - 2); k.setAttribute('y', b.y); k.setAttribute('width', b.width + 4); k.setAttribute('height', b.height);
+      svg.insertBefore(k, tx);
+      add('line', { class: 'tick', x1: W + 4, x2: W + 12, y1: yy + .5, y2: yy + .5 });
+    });
+    add('circle', { class: 'now', cx: W - 1.5, cy: y(vals[W - 1]).toFixed(1), r: 3.5 });
+  }
+  document.fonts.ready.then(() => document.querySelectorAll('svg.chart').forEach(chart));
+</script>
+</body>
+</html>

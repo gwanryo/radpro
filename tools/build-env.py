@@ -30,7 +30,8 @@ def write_file(path, env):
 def build_env(env_name,
               font_small, font_medium, font_large, font_symbols,
               font_low,
-              firmware_size_regular, firmware_size_cgv, firmware_size_cjk):
+              firmware_size_regular, firmware_size_cgv, firmware_size_cjk,
+              languages=None, extra_flags=None, font_small_file=None):
     env = []
 
     # Get list of language header files
@@ -40,6 +41,9 @@ def build_env(env_name,
     for language_file in language_files:
         # Get language code by removing .h extension
         language = os.path.splitext(language_file)[0]
+
+        if languages and language not in languages:
+            continue
 
         # Set firmware size based on language
         if language in ['bg', 'el', 'ru', 'uk', 'vi']:
@@ -75,12 +79,28 @@ def build_env(env_name,
         env += [f'    -DFIRMWARE_SIZE={firmware_size}\n']
         env += [f'    -DLANGUAGE=\'"{language}"\'\n']
         env += [f'    -DSTRINGS=\'"strings/{language}.h"\'\n']
-        env += [f'    -DFONT_SMALL=\'"fonts/font_small_{language}_{font_small_bpp}.h"\'\n']
+        font_small_path = font_small_file or f'font_small_{language}_{font_small_bpp}.h'
+        env += [f'    -DFONT_SMALL=\'"fonts/{font_small_path}"\'\n']
         env += [f'    -DFONT_MEDIUM=\'"fonts/font_medium_{language}_{font_medium_bpp}.h"\'\n']
         env += [f'    -DFONT_LARGE=\'"fonts/font_large_{font_large_bpp}.h"\'\n']
         env += [f'    -DFONT_SYMBOLS=\'"fonts/font_symbols_{font_symbols_bpp}.h"\'\n']
+        for flag in extra_flags or []:
+            env += [f'    {flag}\n']
 
     return env
+
+
+# Environments written to platformio.ini. Other build_env() calls below are kept
+# (for upstream merges) but not emitted. Add a name here to enable it again.
+ENABLED_ENVS = ['bosean-fs5000']
+
+_build_env_all = build_env
+
+
+def build_env(env_name, *args, **kwargs):
+    if env_name not in ENABLED_ENVS:
+        return []
+    return _build_env_all(env_name, *args, **kwargs)
 
 
 # Build environments
@@ -91,7 +111,12 @@ env += build_env('fs2011-gd32f150c8', 'monochrome', 'monochrome', 'monochrome', 
 env += build_env('fs2011-gd32f103c8', 'monochrome', 'monochrome', 'monochrome', 'monochrome', False, '0xa800', '0xb000', '0xc800')
 env += build_env('bosean-fs600', 'monochrome', 'monochrome', 'monochrome', 'monochrome', False, '0xa800', '0xb000', '0xc800')
 env += build_env('bosean-fs1000', 'monochrome', 'monochrome', 'monochrome', 'monochrome', False, '0xa800', '0xb000', '0xc800')
-env += build_env('bosean-fs5000', 'color_21', 'color_32', 'color_84', 'color', False, '0xd000', '0xe000', '0x14000')
+env += build_env('bosean-fs5000', 'color_21', 'color_32', 'color_84', 'color', False, '0xd000', '0xe000', '0x14000',
+                 languages=['ko'],
+                 font_small_file='font_small_ko_fs5000_color_21.h',
+                 extra_flags=['-DFONT_TINY=\'"fonts/font_tiny_ko_color_14.h"\'',
+                              '-DFONT_VALUE=\'"fonts/font_value_color_54.h"\'',
+                              '-DFONT_SYMBOLS_SMALL=\'"fonts/font_symbols_color_16.h"\''])
 env += build_env('fnirsi-gc01_ch32f103r8', 'color_21', 'color_32', 'color_115', 'color', True, '0xa800', '0xb000', '0xb800')
 env += build_env('fnirsi-gc01_apm32f103rb', 'color_21', 'color_32', 'color_115', 'color', False, '0xe000', '0xf000', '0x15000')
 env += build_env('fnirsi-gc03', 'color_21', 'color_32', 'color_84', 'color', False, '0xe000', '0x10000', '0x15000')

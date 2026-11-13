@@ -8,6 +8,7 @@
 
 import os
 from pathlib import Path
+import re
 import sys
 
 import fontconv
@@ -172,6 +173,21 @@ run_fontconv(
     cap_height=60,
 )
 
+run_fontconv(
+    "NotoSans-SemiBold.ttf",
+    CODEPOINT_SET_LARGE,
+    "font_value_color_54.h",
+    "font_value",
+    pixels=54,
+)
+run_fontconv(
+    "RadPro-Symbols.ttf",
+    CODEPOINT_SET_SYMBOLS_COLOR,
+    "font_symbols_color_16.h",
+    "font_symbols_small",
+    pixels=16,
+)
+
 
 # Languages
 for language_file in Path("../platform.io/src/system/strings").glob("*.h"):
@@ -328,3 +344,136 @@ for language_file in Path("../platform.io/src/system/strings").glob("*.h"):
         descent=font_small_color_21_descent,
         cap_height=font_small_color_21_cap_height,
     )
+
+
+# FS-5000 strings not compiled into the firmware image
+FS5000_UNUSED_KEYS = {
+    "STRING_NUMBERS",
+    "STRING_KHZ",
+    "STRING_VOLT_PER_METER_UNIT",
+    "STRING_TESLA",
+    "STRING_GAUSS",
+    "STRING_NOTIFICATION_HVCUSTOM",
+    "STRING_HISTORY",
+    "STRING_ELECTRIC_FIELD",
+    "STRING_MAGNETIC_FIELD",
+    "STRING_ALERT_DONE",
+    "STRING_DATAMODE",
+    "STRING_VOICE",
+    "STRING_ELECTRIC_FIELD_ALARM",
+    "STRING_MAGNETIC_FIELD_ALARM",
+    "STRING_MAGNETIC_FIELD_UNITS",
+    "STRING_HVPROFILE",
+    "STRING_FACTORY_DEFAULT",
+    "STRING_ACCURACY",
+    "STRING_ENERGY_SAVING",
+    "STRING_CUSTOM",
+    "STRING_PWMFREQUENCY",
+    "STRING_PWMDUTY_CYCLE",
+    "STRING_CONTRAST",
+    "STRING_ALWAYS_OFF",
+    "STRING_PULSEVOLUME",
+    "STRING_ALERTVOLUME",
+    "STRING_VOICEVOLUME",
+    "STRING_NI_MH",
+    "STRING_ALKALINE",
+    "STRING_TUBE_LIFE",
+    "STRING_DEVICE_ID",
+}
+
+# FS-5000 tiny font (Korean)
+def get_tiny_font_keys():
+    keys = {
+        "STRING_ADAPTIVE_FAST",
+        "STRING_ADAPTIVE_PRECISION",
+        "STRING_1_MINUTE",
+        "STRING_30_SECONDS",
+        "STRING_10_SECONDS",
+        "STRING_START",
+        "STRING_ELAPSED",
+        "STRING_AVERAGE_TIME",
+        "STRING_NOW",
+        "STRING_WARNING",
+        "STRING_ALARM",
+        "STRING_ALERT_FAULT",
+        "STRING_INSTANTANEOUS",
+        "STRING_AVERAGE",
+        "STRING_COUNT",
+        "STRING_COUNTS",
+    }
+
+    source_path = Path("../platform.io/src")
+    source_text = ""
+    for source_file in source_path.glob("**/*.c"):
+        source_text += open(source_file, "rt", encoding="utf-8").read() + "\n"
+
+    keys.update(re.findall(r"\bSTRING_HISTORY_\w+", open(source_path / "system/strings/ko.h", "rt", encoding="utf-8").read()))
+    menu_loose = re.findall(r"\bMenu\s+(\w+)\s*=\s*\{", source_text)
+    menu_titles = re.findall(r"\bMenu\s+\w+\s*=\s*\{\s*(?:getString\()?(STRING_\w+)", source_text)
+    if len(menu_loose) != len(menu_titles):
+        raise Exception(
+            f"Tiny font: {len(menu_loose)} Menu initializers found but only {len(menu_titles)} have a STRING_ title"
+        )
+    keys.update(menu_titles)
+    keys.update(re.findall(r"drawTitleBar\(getString\((STRING_\w+)\)\)", source_text))
+    keys.update(re.findall(r"drawNotification\(getString\((STRING_\w+)\)", source_text))
+
+    rng_options = re.search(r"rngModeMenuOptions\[\]\s*=\s*\{(.*?)\};", source_text, re.DOTALL)
+    if rng_options is None:
+        raise Exception("Tiny font: rngModeMenuOptions[] not found in sources")
+    keys.update(re.findall(r"STRING_\w+", rng_options.group(1)))
+
+    return keys
+
+
+tiny_keys = get_tiny_font_keys() - FS5000_UNUSED_KEYS
+ko_lines = open("../platform.io/src/system/strings/ko.h", "rt", encoding="utf-8").readlines()
+tiny_text = [
+    line
+    for line in ko_lines
+    if line.startswith("#define ") and line.split()[1] in tiny_keys
+]
+found_keys = {line.split()[1] for line in tiny_text}
+missing_keys = tiny_keys - found_keys
+if missing_keys:
+    raise Exception(f"Tiny font: strings not found: {sorted(missing_keys)}")
+
+codepoint_set_tiny = get_codepoint_set(tiny_text, "0x20-0x7e,0xb1,0xb5")
+
+run_fontconv(
+    "NotoSansKR-SemiBold.ttf",
+    codepoint_set_tiny,
+    "font_tiny_ko_color_14.h",
+    "font_tiny",
+    pixels=14,
+)
+
+# FS-5000 small font (Korean)
+small_excluded_keys = {
+    "STRING_START",
+    "STRING_ELAPSED",
+    "STRING_AVERAGE_TIME",
+    "STRING_NOW",
+    "STRING_WARNING",
+    "STRING_ALARM",
+}
+small_excluded_keys.update(FS5000_UNUSED_KEYS)
+small_excluded_keys.update(
+    key for key in re.findall(r"\bSTRING_HISTORY_\w+", "".join(ko_lines))
+)
+small_text = [
+    line
+    for line in ko_lines
+    if not (line.startswith("#define ") and line.split()[1] in small_excluded_keys)
+]
+
+run_fontconv(
+    "NotoSansKR-SemiBold.ttf",
+    get_codepoint_set(small_text, "0x20-0x7e"),
+    "font_small_ko_fs5000_color_21.h",
+    "font_small",
+    pixels=21,
+    ascent=23,
+    descent=7,
+    cap_height=16,
+)
