@@ -35,7 +35,7 @@ uint32_t getCumulativeDoseStartTime(void);
 void setCumulativeDoseStartTime(uint32_t value);
 
 void seedCumulativeDoseStartTime(void);
-void updateCumulativeDoseStartTime(uint32_t previousDeviceTime);
+void updateCumulativeDoseStartTime(uint32_t previousDeviceTime, uint32_t newDeviceTime);
 
 void clearCumulativeDoseValues(void);
 

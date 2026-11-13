@@ -321,7 +321,7 @@ void processCommSet(const char *s)
             if (parseUInt32(&s, &intValue) && setDeviceTime(intValue))
             {
 #if defined(FS5000)
-                updateCumulativeDoseStartTime(previousDeviceTime);
+                updateCumulativeDoseStartTime(previousDeviceTime, intValue);
 #endif
                 writeDatalogTimeChange();
                 pushCommOk();

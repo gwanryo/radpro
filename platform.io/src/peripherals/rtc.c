@@ -249,11 +249,17 @@ static void onRTCOptionMenuSelect(menu_size_t index)
         break;
     }
 
+#if defined(FS5000)
+    uint32_t newDeviceTime = getTimeFromDateTime(&dateTime) - getTimeZoneOffset();
+
+    setDeviceTime(newDeviceTime);
+#else
     setDeviceDateTime(&dateTime);
+#endif
     rtcCurrentDateTime = dateTime;
 
 #if defined(FS5000)
-    updateCumulativeDoseStartTime(previousDeviceTime);
+    updateCumulativeDoseStartTime(previousDeviceTime, newDeviceTime);
 #endif
 
     writeDatalogTimeChange();

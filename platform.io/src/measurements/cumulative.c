@@ -8,6 +8,7 @@
  */
 
 #include "../measurements/cumulative.h"
+#include "../measurements/dosestart.h"
 #include "../measurements/instantaneous.h"
 #include "../measurements/measurements.h"
 #include "../peripherals/rtc.h"
@@ -171,15 +172,16 @@ void seedCumulativeDoseStartTime(void)
         cumulativeDoseStartTime = getDeviceTime();
 }
 
-void updateCumulativeDoseStartTime(uint32_t previousDeviceTime)
+void updateCumulativeDoseStartTime(uint32_t previousDeviceTime, uint32_t newDeviceTime)
 {
-    if (cumulativeDoseStartTimeProvisional)
-        cumulativeDoseStartTime += getDeviceTime() - previousDeviceTime;
-    else if (!cumulativeDoseStartTime && isDeviceDateValid())
-    {
-        cumulativeDoseStartTime = getDeviceTime();
-        cumulativeDoseStartTimeProvisional = true;
-    }
+    RTCDateTime dateTime;
+    getLocalDateTimeFromDeviceTime(newDeviceTime, &dateTime);
+
+    cumulativeDoseStartTime = getUpdatedDoseStartTime(cumulativeDoseStartTime,
+                                                      &cumulativeDoseStartTimeProvisional,
+                                                      previousDeviceTime,
+                                                      newDeviceTime,
+                                                      dateTime.year >= RTC_YEAR_MIN);
 }
 
 void clearCumulativeDoseValues(void)
