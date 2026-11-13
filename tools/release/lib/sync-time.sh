@@ -103,7 +103,7 @@ try_stty() {  # $1 = port
     [ "$(remaining)" -le 0 ] && return 1
     stty $STTY_DEV "$dev" 115200 cs8 -cstopb -parenb raw -echo clocal cread 2>/dev/null || return 1
     exec 3<>"$dev" 2>/dev/null || return 1
-    IFS= read -r -n 4096 -t 1 junk <&3    # drain stale input (integer timeout)
+    while [ "$(remaining)" -gt 0 ] && IFS= read -r -n 4096 -t 1 junk <&3; do :; done    # drain stale input until a read times out
     id=$(request "GET deviceId" 2)
     case "$id" in
         *"Bosean FS-5000"*) ;;

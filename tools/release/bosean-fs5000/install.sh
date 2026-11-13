@@ -2,16 +2,28 @@
 # Rad Pro install script for the Bosean FS-5000 (flashing + automatic USB clock sync).
 ORIG_DIR=$(pwd)
 cd "$(dirname "$0")" || exit 1
+echo
 
 # Resolve the firmware image here so a missing image can never look like success.
+# Images inside the package are passed relative to flashtool's folder (lib), so the
+# path never contains spaces wherever the package is extracted.
 if [ -n "$1" ]; then
-    if [ ! -f "$1" ]; then
-        # relative paths are relative to the caller's folder
-        [ -f "$ORIG_DIR/$1" ] || { echo "Firmware image not found: $1"; exit 2; }
-        IMG="$ORIG_DIR/$1"
-    else
-        case "$1" in /*) IMG="$1";; *) IMG="$ORIG_DIR/$1";; esac
+    # flashtool.sh substitutes the path into an eval'd OpenOCD (Tcl) command, so
+    # reject whitespace and shell/Tcl special characters. Relative paths are
+    # relative to the caller's folder.
+    case "$1" in /*) IMG="$1";; *) IMG="$ORIG_DIR/$1";; esac
+    if [ ! -f "$IMG" ]; then
+        echo "Firmware image not found: $1"
+        exit 2
     fi
+    BAD_CHARS='!"'\''`$\;&|<>()*?[]{}'
+    case "$IMG" in
+        *[[:space:]]*|*["$BAD_CHARS"]*)
+            echo "The image path must not contain spaces or any of: $BAD_CHARS"
+            echo "  $IMG"
+            echo "Copy the image to a path without them, or run without an argument to use the packaged firmware."
+            exit 2;;
+    esac
 else
     FILES=()
     for f in firmware/radpro-bosean-fs5000-*.bin; do
