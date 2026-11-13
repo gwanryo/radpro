@@ -44,6 +44,9 @@ static const Settings defaultSettings = {
 
     .rateWarning = RATE_1_USVH,
     .rateAlarm = RATE_10_USVH,
+#if defined(FS5000)
+    .instantaneousAveraging = INSTANTANEOUSAVERAGING_ADAPTIVEPRECISION,
+#endif
     .alertSound = true,
     .alertVoice = true,
     .alertVibration = true,
@@ -55,6 +58,9 @@ static const Settings defaultSettings = {
     .loggingMode = DATALOG_LOGGINGMODE_10_MINUTES,
 
     .displayContrast = DISPLAY_CONTRAST_DEFAULT,
+#if defined(FS5000)
+    .displayTheme = DISPLAY_THEME_DUSK,
+#endif
 #if defined(SIMULATOR)
     .displayBrightness = DISPLAY_BRIGHTNESS_VERYHIGH,
 #else
