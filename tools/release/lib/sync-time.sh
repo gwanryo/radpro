@@ -187,10 +187,15 @@ enter_pressed() {  # returns 0 if the user pressed Enter
     return 1
 }
 
-# Discard lines typed before the prompt (bounded; ~1 s when nothing is pending).
+# Discard lines typed before the prompt (bounded). bash >= 4: `read -t 0` only tests for
+# pending input, so nothing blocks; bash 3.2 has no such test and waits ~1 s instead.
 drain_stdin() {
     local i=0 _l
-    while [ $i -lt 20 ] && IFS= read -r -t 1 _l; do i=$((i + 1)); done
+    if [ "${BASH_VERSINFO[0]:-3}" -ge 4 ]; then
+        while [ $i -lt 20 ] && read -t 0 && IFS= read -r -t 1 _l; do i=$((i + 1)); done
+    else
+        while [ $i -lt 20 ] && IFS= read -r -t 1 _l; do i=$((i + 1)); done
+    fi
 }
 
 # One round over all current ports; sets ROUND to found, skip (Enter) or empty.

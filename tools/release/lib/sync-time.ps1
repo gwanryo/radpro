@@ -113,7 +113,9 @@ function Get-Ports {
         $script:usbPorts = @()
         try {
             foreach ($dev in @(Get-CimInstance -ClassName Win32_PnPEntity -Filter "Name LIKE '%(COM%'" -ErrorAction Stop)) {
-                if ($dev.Name -match '\((COM\d+)\)' -and $dev.PNPDeviceID -match '^(USB|FTDIBUS)\\') { $script:usbPorts += $Matches[1] }
+                # Keep the COM capture separate: a second -match would overwrite $Matches.
+                $com = [regex]::Match([string]$dev.Name, '\((COM\d+)\)')
+                if ($com.Success -and [regex]::IsMatch([string]$dev.PNPDeviceID, '^(USB|FTDIBUS)\\')) { $script:usbPorts += $com.Groups[1].Value }
             }
         } catch { }
     }
