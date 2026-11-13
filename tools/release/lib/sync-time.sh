@@ -1,13 +1,22 @@
 #!/bin/bash
 # Rad Pro: set the clock and time zone of a Bosean FS-5000 from this computer over USB.
 # Linux/macOS, best effort. Never fails the caller: always exits 0.
-# Total time is bounded by MAX_SECONDS (checked before every port probe and read).
+# Flashing uses only the ST-Link, so the device's USB-C port may not be connected yet:
+# probe the existing ports briefly (warn if the device is already there: ST-LINK and USB-C
+# must not power the board at the same time), then ask the user to disconnect the ST-LINK
+# and connect the USB-C cable, and wait up to WAIT_SECONDS for a new port (Enter skips
+# when stdin is a terminal).
+# Usage: sync-time.sh [WAIT_SECONDS]   (or SYNC_WAIT_SECONDS=N; default 60)
+# Every phase is bounded by DEADLINE_EPOCH (checked before every port probe and read).
 # Uses only integer read timeouts (macOS /bin/bash 3.2 compatible).
 
-MAX_SECONDS=12
+WAIT_SECONDS=${1:-${SYNC_WAIT_SECONDS:-60}}
+case "$WAIT_SECONDS" in ''|*[!0-9]*) WAIT_SECONDS=60;; esac
+WAIT_SECONDS=$((10#$WAIT_SECONDS))
+PROBE_SECONDS=3    # initial probe of the ports already present
+SET_SECONDS=10     # time allowed for the SET requests once the device answered
 PORTS_GLOB="/dev/ttyUSB* /dev/ttyACM* /dev/cu.usbserial* /dev/cu.wchusbserial* /dev/cu.usbmodem*"
-START_EPOCH=$(date +%s)
-DEADLINE_EPOCH=$((START_EPOCH + MAX_SECONDS))
+DEADLINE_EPOCH=$(( $(date +%s) + PROBE_SECONDS ))
 
 remaining() {
     local r=$((DEADLINE_EPOCH - $(date +%s)))
@@ -29,13 +38,13 @@ tz_hours() {
 }
 
 try_python() {  # $1 = port; returns 0 if device found (even if set failed)
-    python3 - "$1" "$(tz_hours)" "$DEADLINE_EPOCH" <<'PY' 2>/dev/null
+    python3 - "$1" "$(tz_hours)" "$DEADLINE_EPOCH" "$SET_SECONDS" <<'PY' 2>/dev/null
 import sys, time
 try:
     import serial
 except ImportError:
     sys.exit(2)
-port, tz, deadline = sys.argv[1], sys.argv[2], float(sys.argv[3])
+port, tz, deadline, set_seconds = sys.argv[1], sys.argv[2], float(sys.argv[3]), float(sys.argv[4])
 def req(s, text, wait=1.5):
     wait = min(wait, deadline - time.time())
     if wait <= 0:
@@ -59,6 +68,7 @@ with s:
     if not ident or "Bosean FS-5000" not in ident:
         sys.exit(1)
     print("Found " + ident + " on " + port)
+    deadline = time.time() + set_seconds    # own time budget for the SET requests
     while True:
         now = int(time.time())
         r1 = req(s, "SET deviceTime %d" % now)
@@ -110,6 +120,7 @@ try_stty() {  # $1 = port
         *) exec 3>&-; return 1;;
     esac
     echo "Found $id on $dev"
+    DEADLINE_EPOCH=$(( $(date +%s) + SET_SECONDS ))    # own time budget for the SET requests
     tz=$(tz_hours)
     while true; do
         r1=$(request "SET deviceTime $(date -u +%s)" 2)
@@ -132,23 +143,85 @@ if command -v python3 >/dev/null 2>&1 && python3 -c 'import serial' 2>/dev/null;
     HAVE_PYSERIAL=1
 fi
 
+list_ports() {
+    local dev
+    for dev in $PORTS_GLOB; do [ -e "$dev" ] && echo "$dev"; done
+}
+
+probe() {  # $1 = port; returns 0 if the device answered
+    if [ $HAVE_PYSERIAL -eq 1 ]; then try_python "$1"; else try_stty "$1"; fi
+}
+
+INTERACTIVE=0
+[ -t 0 ] && INTERACTIVE=1
+
+# Wait one second; returns 0 if the user pressed Enter (or Ctrl+D) on the terminal.
+wait_or_enter() {
+    local line rc
+    if [ $INTERACTIVE -eq 1 ]; then
+        IFS= read -r -t 1 line
+        rc=$?
+        [ $rc -gt 128 ] && return 1    # timeout
+        return 0                       # a line (Enter) or end of input
+    fi
+    sleep 1
+    return 1
+}
+
 found=0
+skipped=0
+
+# 1) Ports already present (the cable may already be connected).
 while [ $found -eq 0 ] && [ "$(remaining)" -gt 0 ]; do
-    for dev in $PORTS_GLOB; do
-        [ -e "$dev" ] || continue
+    for dev in $(list_ports); do
         [ "$(remaining)" -le 0 ] && break
-        if [ $HAVE_PYSERIAL -eq 1 ]; then
-            try_python "$dev" && found=1
-        else
-            try_stty "$dev" && found=1
-        fi
-        [ $found -eq 1 ] && break
+        probe "$dev" && { found=1; break; }
     done
-    [ $found -eq 0 ] && [ "$(remaining)" -gt 1 ] && sleep 1
+    [ $found -eq 0 ] && [ "$(remaining)" -gt 0 ] && sleep 1
 done
+if [ $found -eq 1 ]; then
+    # The installer guide powers the board from the ST-LINK 3.3 V pin; USB-C powers it too.
+    echo "Warning: do not connect the USB-C cable while the ST-LINK is attached to the device."
+    echo "Next time, disconnect the ST-LINK first and connect USB-C only when asked."
+fi
+
+# 2) Ask for the USB-C cable and probe ports that appear afterwards.
+if [ $found -eq 0 ] && [ "$WAIT_SECONDS" -gt 0 ]; then
+    known=" $(echo $(list_ports)) "
+    echo
+    echo "Disconnect the ST-LINK from the device, then connect the device's USB-C port"
+    echo "to this computer with a data cable."
+    if [ $INTERACTIVE -eq 1 ]; then
+        echo "Waiting up to $WAIT_SECONDS seconds for the device. Press Enter to skip."
+    else
+        echo "Waiting up to $WAIT_SECONDS seconds for the device. Press Ctrl+C to skip."
+    fi
+    DEADLINE_EPOCH=$(( $(date +%s) + WAIT_SECONDS ))
+    while [ $found -eq 0 ] && [ "$(remaining)" -gt 0 ]; do
+        current=" $(echo $(list_ports)) "
+        # A port that disappears (device re-enumerating) counts as new when it returns.
+        still=" "
+        for dev in $known; do
+            case "$current" in *" $dev "*) still="$still$dev ";; esac
+        done
+        known=$still
+        for dev in $current; do
+            case "$known" in *" $dev "*) continue;; esac
+            [ "$(remaining)" -le 0 ] && break
+            # New ports stay unknown, so a port that is not ready yet is probed again next round.
+            probe "$dev" && { found=1; break; }
+        done
+        [ $found -eq 1 ] && break
+        if wait_or_enter; then skipped=1; break; fi
+    done
+fi
 
 if [ $found -eq 0 ]; then
-    echo "Could not find a Bosean FS-5000 on a USB serial port; clock not synchronized."
+    if [ $skipped -eq 1 ]; then
+        echo "Clock sync skipped."
+    else
+        echo "Could not find a Bosean FS-5000 on a USB serial port; clock not synchronized."
+    fi
     echo "Connect the device with USB and set the clock later (any radpro-tool.py command syncs it) or in the settings."
 fi
 exit 0

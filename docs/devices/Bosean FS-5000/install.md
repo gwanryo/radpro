@@ -66,6 +66,7 @@ Connect the ST-LINK as follows:
 ### Tips
 
 * For a reliable connection, solder a 4-pin header to SWD
+* Do not connect the device's USB-C port while the ST-LINK is attached (both would power the board). Connect USB-C only after disconnecting the ST-LINK, when the installer asks for it.
 
 ⚠️ Double-check all connections before powering anything. Incorrect wiring can damage the device.
 
@@ -86,7 +87,7 @@ Rad Pro is flashed to the device.
 
 > Keep the backup file safe—you'll need it to restore the original firmware.
 
-If the device USB cable is connected after flashing, the installer waits for the device and sets its clock and time zone from the computer.
+After flashing, the installer asks you to disconnect the ST-LINK and connect the device's USB-C port with a data cable. It waits up to 60 seconds (press Enter to skip), then sets the device clock and time zone from the computer.
 
 ### Updating Rad Pro (keeping settings)
 
