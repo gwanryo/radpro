@@ -178,7 +178,7 @@ static const State *loadLatestState(void)
     return lastState;
 }
 
-static void appendState(State *state)
+static bool appendState(State *state)
 {
     if (stateOffset >= STATES_PAGE_LASTSTATE_OFFSET)
     {
@@ -188,9 +188,15 @@ static void appendState(State *state)
     }
 
     if (writeFlash(STATES_BASE + stateOffset, (uint8_t *)state, sizeof(State)))
+    {
         stateOffset += sizeof(State);
-    else
-        stateOffset = STATES_PAGE_LASTSTATE_OFFSET;
+
+        return true;
+    }
+
+    stateOffset = STATES_PAGE_LASTSTATE_OFFSET;
+
+    return false;
 }
 
 void initSettings(void)
@@ -249,10 +255,11 @@ void saveSettings(void)
 
     state.settings = settings;
 
-    appendState(&state);
-
 #if defined(FS5000)
-    markSettingsSaved();
+    if (appendState(&state))
+        markSettingsSaved();
+#else
+    appendState(&state);
 #endif
 }
 
