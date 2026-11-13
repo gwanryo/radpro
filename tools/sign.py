@@ -86,6 +86,9 @@ def sign_firmware(env_name):
 
     for language in languages:
         build_name = env_name + "-" + language
+
+        if build_name not in ENABLED_BUILDS:
+            continue
         build_dir = get_radpro_path() + "platform.io/.pio/build/" + build_name + "/"
         bin_file = build_dir + "firmware.bin"
         elf_file = build_dir + "firmware.elf"
@@ -146,6 +149,9 @@ def sign_firmware(env_name):
 
         print(f"done: size 0x{firmware_size:04x}, empty space {firmware_empty_space}")
 
+
+# Only these builds are signed (matches ENABLED_ENVS in build-env.py; FS-5000 is Korean only)
+ENABLED_BUILDS = ["bosean-fs5000-ko"]
 
 # Sign firmware
 envs = [

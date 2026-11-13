@@ -90,6 +90,19 @@ def build_env(env_name,
     return env
 
 
+# Environments written to platformio.ini. Other build_env() calls below are kept
+# (for upstream merges) but not emitted. Add a name here to enable it again.
+ENABLED_ENVS = ['bosean-fs5000']
+
+_build_env_all = build_env
+
+
+def build_env(env_name, *args, **kwargs):
+    if env_name not in ENABLED_ENVS:
+        return []
+    return _build_env_all(env_name, *args, **kwargs)
+
+
 # Build environments
 env = read_file(get_radpro_path() + 'tools/platformio.ini.base')
 
