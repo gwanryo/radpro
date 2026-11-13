@@ -15,7 +15,11 @@
 
 #include "../measurements/datalog.h"
 
+#if defined(FS5000)
+#define COMM_BUFFER_SIZE 96
+#else
 #define COMM_BUFFER_SIZE 64
+#endif
 
 extern const char *const commId;
 
