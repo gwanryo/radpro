@@ -1,5 +1,35 @@
 # Releases
 
+## 3.1.2
+
+* **Bosean FS-5000** (Korean build)
+
+  * New two-page **overview** measurement screen, replacing the instantaneous, average, cumulative and history views:
+    * Page 1: instantaneous rate with confidence interval, logarithmic bar, average, maximum, cumulative dose, counts, start time and elapsed time.
+    * Page 2: compact instantaneous, average and secondary-unit values, averaging time and confidence interval, and a history graph with 1-2-5 gridlines and value labels, warning/alarm lines and the latest value.
+    * OK switches pages; left/right change the graph period on page 2; holding left resets the instantaneous rate, maximum and average.
+  * Compact 24 px title bar showing the time and the instantaneous averaging mode.
+  * The cumulative dose start time is now recorded and shown. Cumulative dose reset moved to **Settings > Measurements > Cumulative dose > Reset**.
+  * Settings are now saved within a second of any change (previously only on a normal power-off).
+  * New defaults: adaptive precision averaging, dusk theme.
+  * The settings format changed: installing this version resets settings and cumulative values.
+
+* **Bug fixes**
+
+  * Fixed the data log logging-mode menu not starting logging, and data log reset handling.
+  * Fixed `GET tubeType` returning the wrong tube name.
+  * Fixed the battery level indicator hysteresis.
+  * Fixed data logging stopping after an interrupted data log download.
+
+* **Translations**
+
+  * Revised the Korean translation.
+
+* **Development**
+
+  * Added a host-side render harness, unit tests and a glyph coverage check (`tools/host`).
+  * Generated build environments and firmware signing are limited to the Bosean FS-5000 Korean build (`ENABLED_ENVS` in `tools/build-env.py`, `ENABLED_BUILDS` in `tools/sign.py`).
+
 ## 3.1.1 "Aligned"
 
 * Fixed memory alignment issues.
