@@ -15,6 +15,11 @@ import fontconv
 import textproc
 
 
+# "--fs5000-only": regenerate only the two FS-5000 Korean fonts (fast)
+FS5000_ONLY = "--fs5000-only" in sys.argv[1:]
+FS5000_FONT_FILES = {"font_small_ko_fs5000_color_21.h", "font_tiny_ko_color_14.h"}
+
+
 def get_radpro_path():
     """
     Get the root directory path of the RadPro project.
@@ -51,6 +56,9 @@ def run_fontconv(
         descent (int, optional): The descent value for the font. Defaults to None.
         cap_height (int, optional): The cap height value for the font. Defaults to None.
     """
+    if FS5000_ONLY and dest not in FS5000_FONT_FILES:
+        return
+
     args = []
     args += ["-s", codepoint_set]
     args += ["-n", name]
