@@ -13,6 +13,8 @@
   * Settings are now saved within a second of any change (previously only on a normal power-off).
   * New defaults: adaptive precision averaging, dusk theme, 10-second datalog logging, all pulse and alert indications off, USB auto power-on on, UTC+9 time zone.
   * The settings format changed: installing this version resets settings and cumulative values.
+  * New `update.bat` / `update.sh` installer scripts flash a new version without erasing settings, cumulative values or the data log (use `install` for the first installation or when the settings format changes).
+  * After flashing, `install` and `update` ask you to disconnect the ST-LINK and connect the device's USB-C port, then set the device clock and time zone from the computer.
 
 * **Bug fixes**
 
@@ -20,6 +22,7 @@
   * Fixed `GET tubeType` returning the wrong tube name.
   * Fixed the battery level indicator hysteresis.
   * Fixed data logging stopping after an interrupted data log download.
+  * Fixed `GET deviceId` responses overflowing the communications buffer.
 
 * **Translations**
 
