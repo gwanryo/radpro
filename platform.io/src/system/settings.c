@@ -26,6 +26,9 @@
 #include "../system/cmath.h"
 #include "../system/power.h"
 #include "../system/settings.h"
+#if defined(FS5000)
+#include "../system/settingssave.h"
+#endif
 #include "../system/statistics.h"
 #include "../system/system.h"
 #include "../ui/menu.h"
@@ -219,6 +222,8 @@ void initSettings(void)
 #if defined(FS5000)
     else
         setCumulativeDoseStartTime(0);
+
+    markSettingsSaved();
 #endif
 }
 
@@ -245,6 +250,10 @@ void saveSettings(void)
     state.settings = settings;
 
     appendState(&state);
+
+#if defined(FS5000)
+    markSettingsSaved();
+#endif
 }
 
 // Settings menu
