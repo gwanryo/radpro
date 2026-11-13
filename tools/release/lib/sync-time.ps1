@@ -1,16 +1,17 @@
 # Rad Pro: set the clock and time zone of a Bosean FS-5000 from this PC over USB.
 # Windows PowerShell 5.1 compatible. Never fails the caller: exits 0 always.
-# Flashing uses only the ST-Link, so the device's USB-C port may not be connected yet:
-# probe the existing ports briefly (warn if the device is already there: ST-LINK and USB-C
-# must not power the board at the same time), then ask the user to disconnect the ST-LINK
-# and connect the USB-C cable, and wait up to -WaitSeconds for a new port (Enter skips).
-# Every phase is bounded by $deadline,
-# which is checked before every port probe and read.
+# Flashing uses only the ST-LINK, so the device's USB-C port may not be connected yet.
+# 1) Probe the ports already present for about $probeSeconds (whole rounds; if the device
+#    answers here, sync and warn: ST-LINK and USB-C must not power the board together).
+# 2) Otherwise ask the user to disconnect the ST-LINK and connect the USB-C cable, and probe
+#    all ports (USB serial ports first) every second for up to -WaitSeconds (Enter skips).
+# Each port probe has its own time limit; a new probe only starts before the deadline.
 
 param([int]$WaitSeconds = 60)
 
-$probeSeconds = 3    # initial probe of the ports already present
-$setSeconds = 10     # time allowed for the SET requests once the device answered
+$probeSeconds = 3      # first rounds over the ports already present
+$idWaitMs = 800        # GET deviceId reply time per port (the device answers in ~40 ms)
+$setSeconds = 10       # time allowed for the SET requests once the device answered
 if ($WaitSeconds -lt 0) { $WaitSeconds = 0 }
 
 $deadline = (Get-Date).AddSeconds($probeSeconds)
@@ -18,7 +19,6 @@ $deadline = (Get-Date).AddSeconds($probeSeconds)
 function Remaining-Ms { return [int][Math]::Max(0, ($script:deadline - (Get-Date)).TotalMilliseconds) }
 
 function Send-Request($port, $request, $waitMs) {
-    $waitMs = [Math]::Min($waitMs, (Remaining-Ms))
     if ($waitMs -le 0) { return $null }
     $port.DiscardInBuffer()
     $port.Write($request + "`r`n")
@@ -35,23 +35,22 @@ function Send-Request($port, $request, $waitMs) {
     return $null
 }
 
+# Returns $true if the device answered on $name (even if it did not accept the settings).
 function Try-Port($name) {
-    if ((Remaining-Ms) -le 0) { return $false }
     $port = New-Object System.IO.Ports.SerialPort $name, 115200, ([System.IO.Ports.Parity]::None), 8, ([System.IO.Ports.StopBits]::One)
     $port.NewLine = "`r`n"
     $port.ReadTimeout = 300
     $port.WriteTimeout = 1000
     try {
         $port.Open()
-        $id = Send-Request $port "GET deviceId" 1500
+        $id = Send-Request $port "GET deviceId" $idWaitMs
         if (-not $id -or $id -notmatch "Bosean FS-5000") { return $false }
         Write-Host "Found $id on $name"
-        # Device found: give the SET requests their own time budget.
-        $script:deadline = (Get-Date).AddSeconds($setSeconds)
 
+        $setDeadline = (Get-Date).AddSeconds($setSeconds)
         $epoch = New-Object DateTime 1970, 1, 1, 0, 0, 0, ([DateTimeKind]::Utc)
         $r1 = $null; $r2 = $null
-        # The device may still be booting and answer ERROR: retry until the deadline.
+        # The device may still be booting and answer ERROR: retry until $setDeadline.
         while ($true) {
             $seconds = [int64][Math]::Floor(([DateTime]::UtcNow - $epoch).TotalSeconds)
             $offset = [Math]::Truncate([TimeZoneInfo]::Local.GetUtcOffset([DateTime]::UtcNow).TotalHours * 10) / 10
@@ -62,7 +61,7 @@ function Try-Port($name) {
                 Write-Host "Device clock set (UTC $seconds, time zone UTC$(if ($offset -ge 0) {'+'})$offsetText)."
                 return $true
             }
-            if ((Remaining-Ms) -le 1000) { break }
+            if (($setDeadline - (Get-Date)).TotalMilliseconds -le 1000) { break }
             Start-Sleep -Milliseconds 1000
         }
         Write-Host "Device did not accept the clock settings (time: $r1, time zone: $r2)."
@@ -80,7 +79,7 @@ $interactive = $false
 try { $interactive = -not [Console]::IsInputRedirected } catch { }
 
 function Enter-Pressed {
-    if (-not $interactive) { return $false }
+    if (-not $script:interactive) { return $false }
     try {
         while ([Console]::KeyAvailable) {
             if ([Console]::ReadKey($true).Key -eq [ConsoleKey]::Enter) { return $true }
@@ -101,30 +100,58 @@ function Wait-Or-Enter($ms) {
     return (Enter-Pressed)
 }
 
+# COM ports, USB serial adapters first (PNPDeviceID USB\... or FTDIBUS\...).
+$script:usbKey = ""
+$script:usbPorts = @()
 function Get-Ports {
-    try { return @([System.IO.Ports.SerialPort]::GetPortNames() | Sort-Object -Unique) } catch { return @() }
+    $names = @()
+    try { $names = @([System.IO.Ports.SerialPort]::GetPortNames() | Sort-Object -Unique) } catch { return @() }
+    $key = $names -join ","
+    if ($key -ne $script:usbKey) {
+        # Look up the USB ports only when the port list changes.
+        $script:usbKey = $key
+        $script:usbPorts = @()
+        try {
+            foreach ($dev in @(Get-CimInstance -ClassName Win32_PnPEntity -Filter "Name LIKE '%(COM%'" -ErrorAction Stop)) {
+                if ($dev.Name -match '\((COM\d+)\)' -and $dev.PNPDeviceID -match '^(USB|FTDIBUS)\\') { $script:usbPorts += $Matches[1] }
+            }
+        } catch { }
+    }
+    $usb = @($names | Where-Object { $script:usbPorts -contains $_ })
+    $other = @($names | Where-Object { $script:usbPorts -notcontains $_ })
+    return @($usb + $other)
 }
 
-$done = $false
-$skipped = $false
-try {
-    # 1) Ports already present (the cable may already be connected).
-    while (-not $done -and (Remaining-Ms) -gt 0) {
-        foreach ($name in (Get-Ports)) {
-            if ((Remaining-Ms) -le 0) { break }
-            if (Try-Port $name) { $done = $true; break }
-        }
-        if (-not $done -and (Remaining-Ms) -gt 0) { Start-Sleep -Milliseconds ([Math]::Min(1000, (Remaining-Ms))) }
+# One round over all current ports. Returns "found", "skip" (Enter) or "".
+# $full: probe every port regardless of the deadline (the very first round); otherwise a
+# probe only starts before the deadline. $keys: check Enter between probes.
+function Probe-Round($full, $keys) {
+    foreach ($name in (Get-Ports)) {
+        if (-not $full -and (Remaining-Ms) -le 0) { break }
+        if ($keys -and (Enter-Pressed)) { return "skip" }
+        if (Try-Port $name) { return "found" }
     }
-    if ($done) {
-        # The installer guide powers the board from the ST-LINK 3.3 V pin; USB-C powers it too.
+    return ""
+}
+
+# ---- main ----
+$result = ""
+try {
+    # 1) Ports already present: one full round, then more rounds until $probeSeconds.
+    $first = $true
+    do {
+        $result = Probe-Round $first $false
+        $first = $false
+        if ($result -eq "" -and (Remaining-Ms) -gt 0) { Start-Sleep -Milliseconds ([Math]::Min(1000, (Remaining-Ms))) }
+    } while ($result -eq "" -and (Remaining-Ms) -gt 0)
+    if ($result -eq "found") {
+        # The install guide powers the board from the ST-LINK 3.3 V pin; USB-C powers it too.
         Write-Host "Warning: do not connect the USB-C cable while the ST-LINK is attached to the device."
         Write-Host "Next time, disconnect the ST-LINK first and connect USB-C only when asked."
     }
 
-    # 2) Ask for the USB-C cable and probe ports that appear afterwards.
-    if (-not $done -and $WaitSeconds -gt 0) {
-        $known = @(Get-Ports)
+    # 2) Ask for the USB-C cable and probe all ports every second.
+    if ($result -eq "" -and $WaitSeconds -gt 0) {
         # Discard keys typed earlier (e.g. at flashtool's "Press any key" prompt).
         if ($interactive) { try { while ([Console]::KeyAvailable) { [void][Console]::ReadKey($true) } } catch { $interactive = $false } }
         Write-Host ""
@@ -136,26 +163,15 @@ try {
             Write-Host "Waiting up to $WaitSeconds seconds for the device. Press Ctrl+C to skip."
         }
         $script:deadline = (Get-Date).AddSeconds($WaitSeconds)
-        while (-not $done -and (Remaining-Ms) -gt 0) {
-            if (Enter-Pressed) { $skipped = $true; break }
-            $current = Get-Ports
-            # A port that disappears (device re-enumerating) counts as new when it returns.
-            $known = @($known | Where-Object { $current -contains $_ })
-            foreach ($name in $current) {
-                if ($known -contains $name) { continue }
-                if ((Remaining-Ms) -le 0) { break }
-                if (Enter-Pressed) { $skipped = $true; break }
-                # New ports stay unknown, so a port that is not ready yet is probed again next round.
-                if (Try-Port $name) { $done = $true; break }
-            }
-            if ($done -or $skipped) { break }
-            if (Wait-Or-Enter 1000) { $skipped = $true; break }
+        while ($result -eq "" -and (Remaining-Ms) -gt 0) {
+            $result = Probe-Round $false $true
+            if ($result -eq "" -and (Wait-Or-Enter 1000)) { $result = "skip" }
         }
     }
 } catch {
 }
-if (-not $done) {
-    if ($skipped) {
+if ($result -ne "found") {
+    if ($result -eq "skip") {
         Write-Host "Clock sync skipped."
     } else {
         Write-Host "Could not find a Bosean FS-5000 on a USB serial port; clock not synchronized."

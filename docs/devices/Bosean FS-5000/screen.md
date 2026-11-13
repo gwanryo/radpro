@@ -43,7 +43,7 @@ The screen starts on page 1 with the 10-minute period after power-on. When a rat
 
 Settings and the cumulative dose start time are saved to flash within a second of any change. The cumulative dose and tube life are also saved at those moments and on a normal power-off.
 
-Updating with `update.bat` / `update.sh` keeps these settings and the data log; `install.bat` / `install.sh` erases them. After flashing, if the USB cable is connected, the installer sets the device clock and time zone from the computer.
+Updating with `update.bat` / `update.sh` keeps these settings and the data log; `install.bat` / `install.sh` erases them. After flashing, the installer asks for the USB-C cable (with the ST-LINK disconnected) and sets the device clock and time zone from the computer if it finds the device.
 
 ## Defaults
 

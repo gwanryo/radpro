@@ -87,7 +87,7 @@ Rad Pro is flashed to the device.
 
 > Keep the backup file safe—you'll need it to restore the original firmware.
 
-After flashing, the installer asks you to disconnect the ST-LINK and connect the device's USB-C port with a data cable. It waits up to 60 seconds (press Enter to skip), then sets the device clock and time zone from the computer.
+After flashing, the installer asks you to disconnect the ST-LINK and connect the device's USB-C port with a data cable, and waits up to 60 seconds for it (press Enter to skip). The device clock and time zone are set from the computer only if the device is found; after a skip or timeout, set the clock later in the settings or with any `radpro-tool.py` command. To change the wait on Linux/macOS, set `SYNC_WAIT_SECONDS` (e.g. `SYNC_WAIT_SECONDS=120 ./install.sh`).
 
 ### Updating Rad Pro (keeping settings)
 

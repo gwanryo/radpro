@@ -1,25 +1,35 @@
 #!/bin/bash
 # Rad Pro: set the clock and time zone of a Bosean FS-5000 from this computer over USB.
 # Linux/macOS, best effort. Never fails the caller: always exits 0.
-# Flashing uses only the ST-Link, so the device's USB-C port may not be connected yet:
-# probe the existing ports briefly (warn if the device is already there: ST-LINK and USB-C
-# must not power the board at the same time), then ask the user to disconnect the ST-LINK
-# and connect the USB-C cable, and wait up to WAIT_SECONDS for a new port (Enter skips
-# when stdin is a terminal).
-# Usage: sync-time.sh [WAIT_SECONDS]   (or SYNC_WAIT_SECONDS=N; default 60)
-# Every phase is bounded by DEADLINE_EPOCH (checked before every port probe and read).
-# Uses only integer read timeouts (macOS /bin/bash 3.2 compatible).
+# Flashing uses only the ST-LINK, so the device's USB-C port may not be connected yet.
+# 1) Probe the ports already present for about PROBE_SECONDS (whole rounds; if the device
+#    answers here, sync and warn: ST-LINK and USB-C must not power the board together).
+# 2) Otherwise ask the user to disconnect the ST-LINK and connect the USB-C cable, and probe
+#    all USB serial ports every second for up to WAIT_SECONDS (Enter skips on a terminal).
+# Usage: sync-time.sh [WAIT_SECONDS]   (or SYNC_WAIT_SECONDS=N; default 60, negative = 0)
+# Each port probe has its own time limit (OP_DEADLINE); a new probe only starts before the
+# wait deadline (DEADLINE_EPOCH). Uses only integer read timeouts (macOS bash 3.2).
 
 WAIT_SECONDS=${1:-${SYNC_WAIT_SECONDS:-60}}
-case "$WAIT_SECONDS" in ''|*[!0-9]*) WAIT_SECONDS=60;; esac
+case "$WAIT_SECONDS" in
+    -*[0-9]*) case "${WAIT_SECONDS#-}" in *[!0-9]*) WAIT_SECONDS=60;; *) WAIT_SECONDS=0;; esac;;
+    ''|*[!0-9]*) WAIT_SECONDS=60;;
+esac
 WAIT_SECONDS=$((10#$WAIT_SECONDS))
-PROBE_SECONDS=3    # initial probe of the ports already present
+PROBE_SECONDS=3    # first rounds over the ports already present
 SET_SECONDS=10     # time allowed for the SET requests once the device answered
 PORTS_GLOB="/dev/ttyUSB* /dev/ttyACM* /dev/cu.usbserial* /dev/cu.wchusbserial* /dev/cu.usbmodem*"
 DEADLINE_EPOCH=$(( $(date +%s) + PROBE_SECONDS ))
+OP_DEADLINE=0
 
-remaining() {
+remaining() {     # seconds left before DEADLINE_EPOCH (when new probes may start)
     local r=$((DEADLINE_EPOCH - $(date +%s)))
+    [ $r -lt 0 ] && r=0
+    echo $r
+}
+
+op_remaining() {  # seconds left for the current port operation
+    local r=$((OP_DEADLINE - $(date +%s)))
     [ $r -lt 0 ] && r=0
     echo $r
 }
@@ -38,17 +48,14 @@ tz_hours() {
 }
 
 try_python() {  # $1 = port; returns 0 if device found (even if set failed)
-    python3 - "$1" "$(tz_hours)" "$DEADLINE_EPOCH" "$SET_SECONDS" <<'PY' 2>/dev/null
+    python3 - "$1" "$(tz_hours)" "$SET_SECONDS" <<'PY' 2>/dev/null
 import sys, time
 try:
     import serial
 except ImportError:
     sys.exit(2)
-port, tz, deadline, set_seconds = sys.argv[1], sys.argv[2], float(sys.argv[3]), float(sys.argv[4])
-def req(s, text, wait=1.5):
-    wait = min(wait, deadline - time.time())
-    if wait <= 0:
-        return None
+port, tz, set_seconds = sys.argv[1], sys.argv[2], float(sys.argv[3])
+def req(s, text, wait):
     s.reset_input_buffer()
     s.write((text + "\r\n").encode())
     end = time.time() + wait
@@ -57,22 +64,20 @@ def req(s, text, wait=1.5):
         if line.startswith("OK") or line.startswith("ERROR"):
             return line
     return None
-if time.time() >= deadline:
-    sys.exit(1)
 try:
-    s = serial.Serial(port, 115200, timeout=0.3, write_timeout=1)
+    s = serial.Serial(port, 115200, timeout=0.2, write_timeout=1)
 except Exception:
     sys.exit(1)
 with s:
-    ident = req(s, "GET deviceId")
+    ident = req(s, "GET deviceId", 0.8)
     if not ident or "Bosean FS-5000" not in ident:
         sys.exit(1)
     print("Found " + ident + " on " + port)
     deadline = time.time() + set_seconds    # own time budget for the SET requests
     while True:
         now = int(time.time())
-        r1 = req(s, "SET deviceTime %d" % now)
-        r2 = req(s, "SET deviceTimeZone " + tz)
+        r1 = req(s, "SET deviceTime %d" % now, 1.5)
+        r2 = req(s, "SET deviceTimeZone " + tz, 1.5)
         if r1 == "OK" and r2 == "OK":
             print("Device clock set (UTC %d, time zone UTC%s%s)." % (now, "" if tz.startswith("-") else "+", tz))
             break
@@ -90,7 +95,7 @@ if [ "$(uname)" = "Darwin" ]; then STTY_DEV="-f"; else STTY_DEV="-F"; fi
 # (empty on timeout). Reads char by char so partial lines survive read timeouts.
 request() {
     local wait=$2 rem c buf="" end
-    rem=$(remaining)
+    rem=$(op_remaining)
     [ "$wait" -gt "$rem" ] && wait=$rem
     [ "$wait" -le 0 ] && return
     printf '%s\r\n' "$1" >&3
@@ -110,23 +115,23 @@ request() {
 
 try_stty() {  # $1 = port
     local dev=$1 id r1 r2 tz junk
-    [ "$(remaining)" -le 0 ] && return 1
+    OP_DEADLINE=$(( $(date +%s) + 4 ))    # own limit for this probe: drain ~1 s + GET deviceId 2 s
     stty $STTY_DEV "$dev" 115200 cs8 -cstopb -parenb raw -echo clocal cread 2>/dev/null || return 1
     exec 3<>"$dev" 2>/dev/null || return 1
-    while [ "$(remaining)" -gt 0 ] && IFS= read -r -n 4096 -t 1 junk <&3; do :; done    # drain stale input until a read times out
+    while [ "$(op_remaining)" -gt 0 ] && IFS= read -r -n 4096 -t 1 junk <&3; do :; done    # drain stale input until a read times out
     id=$(request "GET deviceId" 2)
     case "$id" in
         *"Bosean FS-5000"*) ;;
         *) exec 3>&-; return 1;;
     esac
     echo "Found $id on $dev"
-    DEADLINE_EPOCH=$(( $(date +%s) + SET_SECONDS ))    # own time budget for the SET requests
+    OP_DEADLINE=$(( $(date +%s) + SET_SECONDS ))    # own time budget for the SET requests
     tz=$(tz_hours)
     while true; do
         r1=$(request "SET deviceTime $(date -u +%s)" 2)
         r2=$(request "SET deviceTimeZone $tz" 2)
         [ "$r1" = "OK" ] && [ "$r2" = "OK" ] && break
-        [ "$(remaining)" -le 1 ] && break
+        [ "$(op_remaining)" -le 1 ] && break
         sleep 1    # device may still be booting: retry until the deadline
     done
     exec 3>&-
@@ -143,7 +148,7 @@ if command -v python3 >/dev/null 2>&1 && python3 -c 'import serial' 2>/dev/null;
     HAVE_PYSERIAL=1
 fi
 
-list_ports() {
+list_ports() {    # USB serial ports only (PORTS_GLOB order)
     local dev
     for dev in $PORTS_GLOB; do [ -e "$dev" ] && echo "$dev"; done
 }
@@ -152,42 +157,79 @@ probe() {  # $1 = port; returns 0 if the device answered
     if [ $HAVE_PYSERIAL -eq 1 ]; then try_python "$1"; else try_stty "$1"; fi
 }
 
+# Enter detection: a background reader waits for one line on the terminal; a line read
+# (exit 0) means Enter, end of input (Ctrl+D) is ignored and the reader is restarted.
+# Works with bash 3.2, where `read -t` cannot tell a timeout from end of input.
 INTERACTIVE=0
 [ -t 0 ] && INTERACTIVE=1
+READER_PID=""
 
-# Wait one second; returns 0 if the user pressed Enter (or Ctrl+D) on the terminal.
-wait_or_enter() {
-    local line rc
-    if [ $INTERACTIVE -eq 1 ]; then
-        IFS= read -r -t 1 line
-        rc=$?
-        [ $rc -gt 128 ] && return 1    # timeout
-        return 0                       # a line (Enter) or end of input
-    fi
-    sleep 1
+start_reader() {
+    exec 4<&0
+    ( IFS= read -r _line ) <&4 &
+    READER_PID=$!
+}
+
+stop_reader() {
+    [ -n "$READER_PID" ] && kill "$READER_PID" 2>/dev/null
+    READER_PID=""
+}
+trap stop_reader EXIT
+
+enter_pressed() {  # returns 0 if the user pressed Enter
+    local rc
+    [ -n "$READER_PID" ] || return 1
+    kill -0 "$READER_PID" 2>/dev/null && return 1    # still waiting for a line
+    wait "$READER_PID"; rc=$?
+    READER_PID=""
+    [ $rc -eq 0 ] && return 0
+    start_reader    # end of input: keep waiting for Enter
     return 1
 }
 
-found=0
-skipped=0
+# Discard lines typed before the prompt (bounded; ~1 s when nothing is pending).
+drain_stdin() {
+    local i=0 _l
+    while [ $i -lt 20 ] && IFS= read -r -t 1 _l; do i=$((i + 1)); done
+}
 
-# 1) Ports already present (the cable may already be connected).
-while [ $found -eq 0 ] && [ "$(remaining)" -gt 0 ]; do
+# One round over all current ports; sets ROUND to found, skip (Enter) or empty.
+# $1 = 1: probe every port regardless of the deadline (the very first round).
+# $2 = 1: check Enter between probes.
+probe_round() {
+    local dev
+    ROUND=""
     for dev in $(list_ports); do
-        [ "$(remaining)" -le 0 ] && break
-        probe "$dev" && { found=1; break; }
+        [ "$1" -eq 0 ] && [ "$(remaining)" -le 0 ] && break
+        [ "$2" -eq 1 ] && enter_pressed && { ROUND=skip; return; }
+        probe "$dev" && { ROUND=found; return; }
     done
-    [ $found -eq 0 ] && [ "$(remaining)" -gt 0 ] && sleep 1
+}
+
+# ---- main ----
+ROUND=""
+
+# 1) Ports already present: one full round, then more rounds until PROBE_SECONDS.
+first=1
+while true; do
+    probe_round $first 0
+    first=0
+    [ -n "$ROUND" ] && break
+    [ "$(remaining)" -le 0 ] && break
+    sleep 1
 done
-if [ $found -eq 1 ]; then
-    # The installer guide powers the board from the ST-LINK 3.3 V pin; USB-C powers it too.
+if [ "$ROUND" = "found" ]; then
+    # The install guide powers the board from the ST-LINK 3.3 V pin; USB-C powers it too.
     echo "Warning: do not connect the USB-C cable while the ST-LINK is attached to the device."
     echo "Next time, disconnect the ST-LINK first and connect USB-C only when asked."
 fi
 
-# 2) Ask for the USB-C cable and probe ports that appear afterwards.
-if [ $found -eq 0 ] && [ "$WAIT_SECONDS" -gt 0 ]; then
-    known=" $(echo $(list_ports)) "
+# 2) Ask for the USB-C cable and probe all ports every second.
+if [ -z "$ROUND" ] && [ "$WAIT_SECONDS" -gt 0 ]; then
+    if [ $INTERACTIVE -eq 1 ]; then
+        drain_stdin    # e.g. an impatient Enter typed while flashing
+        start_reader
+    fi
     echo
     echo "Disconnect the ST-LINK from the device, then connect the device's USB-C port"
     echo "to this computer with a data cable."
@@ -197,27 +239,17 @@ if [ $found -eq 0 ] && [ "$WAIT_SECONDS" -gt 0 ]; then
         echo "Waiting up to $WAIT_SECONDS seconds for the device. Press Ctrl+C to skip."
     fi
     DEADLINE_EPOCH=$(( $(date +%s) + WAIT_SECONDS ))
-    while [ $found -eq 0 ] && [ "$(remaining)" -gt 0 ]; do
-        current=" $(echo $(list_ports)) "
-        # A port that disappears (device re-enumerating) counts as new when it returns.
-        still=" "
-        for dev in $known; do
-            case "$current" in *" $dev "*) still="$still$dev ";; esac
-        done
-        known=$still
-        for dev in $current; do
-            case "$known" in *" $dev "*) continue;; esac
-            [ "$(remaining)" -le 0 ] && break
-            # New ports stay unknown, so a port that is not ready yet is probed again next round.
-            probe "$dev" && { found=1; break; }
-        done
-        [ $found -eq 1 ] && break
-        if wait_or_enter; then skipped=1; break; fi
+    while [ -z "$ROUND" ] && [ "$(remaining)" -gt 0 ]; do
+        probe_round 0 1
+        [ -n "$ROUND" ] && break
+        sleep 1
+        enter_pressed && ROUND=skip
     done
+    stop_reader
 fi
 
-if [ $found -eq 0 ]; then
-    if [ $skipped -eq 1 ]; then
+if [ "$ROUND" != "found" ]; then
+    if [ "$ROUND" = "skip" ]; then
         echo "Clock sync skipped."
     else
         echo "Could not find a Bosean FS-5000 on a USB serial port; clock not synchronized."
