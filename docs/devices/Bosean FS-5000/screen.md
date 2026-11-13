@@ -47,3 +47,7 @@ Settings and the cumulative dose start time are saved to flash within a second o
 
 * Instantaneous averaging: adaptive precision
 * Display theme: dusk
+* Datalog logging mode: every 10 seconds
+* Pulse and alert sound, voice, vibration, LED and display flash: off
+* USB auto power-on: on
+* Time zone: UTC+9
