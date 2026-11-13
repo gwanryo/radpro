@@ -29,7 +29,7 @@ gcc -std=gnu11 -O1 -w -DSIMULATOR -DFS5000 -DDISPLAY_COLOR -DDISPLAY_240X320 -DK
 status=0
 for ppm in "$OUT"/*.ppm; do
     name="$(basename "$ppm" .ppm)"
-    magenta="$(${PYTHON:-python} "$HERE/ppm2png.py" "$ppm" "$OUT/$name.png")" || exit 1
+    magenta="$("${PYTHON:-python}" "$HERE/ppm2png.py" "$ppm" "$OUT/$name.png")" || exit 1
     echo "$name: magenta=$magenta"
     case " $PARTIAL " in
         *" $name "*) ;;
