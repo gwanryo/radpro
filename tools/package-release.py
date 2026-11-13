@@ -6,6 +6,7 @@ import argparse
 import glob
 import os
 import sys
+import time
 import zipfile
 
 
@@ -15,6 +16,9 @@ def main():
     p.add_argument("--signed-dir", required=True)
     p.add_argument("--version", required=True)
     p.add_argument("--out", required=True)
+    p.add_argument("--templates-dir",
+                   default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "release"),
+                   help="repo files added to the package: <device>/* and lib/*")
     args = p.parse_args()
 
     new = "radpro-" + args.version + "/"
@@ -43,17 +47,37 @@ def main():
             keep_prefixes.append(old + device + "/install.")
         keep_prefixes = tuple(keep_prefixes)
 
+        # Repo templates: <templates>/<device>/* (device folders in the package only)
+        # override upstream files of the same name; <templates>/lib/* go to lib/.
+        overrides = {}
+        for device in devices:
+            for f in sorted(glob.glob(os.path.join(args.templates_dir, device, "*"))):
+                if os.path.isfile(f):
+                    overrides[new + device + "/" + os.path.basename(f)] = f
+        for f in sorted(glob.glob(os.path.join(args.templates_dir, "lib", "*"))):
+            if os.path.isfile(f):
+                overrides[new + "lib/" + os.path.basename(f)] = f
+
         os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
         with zipfile.ZipFile(args.out, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zout:
             for info in zin.infolist():
                 name = info.filename
                 if name in keep_exact or name.startswith(keep_prefixes):
+                    if new + name[len(old):] in overrides:
+                        continue
                     out = zipfile.ZipInfo(new + name[len(old):], date_time=info.date_time)
                     out.external_attr = info.external_attr
                     out.create_system = info.create_system
                     is_dir = name.endswith("/")
                     out.compress_type = zipfile.ZIP_STORED if is_dir else zipfile.ZIP_DEFLATED
                     zout.writestr(out, b"" if is_dir else zin.read(name))
+            for arc, f in sorted(overrides.items()):
+                o = zipfile.ZipInfo(arc, date_time=time.localtime(os.path.getmtime(f))[:6])
+                o.external_attr = (0o100755 if f.endswith(".sh") else 0o100644) << 16
+                o.create_system = 3
+                o.compress_type = zipfile.ZIP_DEFLATED
+                with open(f, "rb") as fh:
+                    zout.writestr(o, fh.read())
             for device, bins in devices.items():
                 d = zipfile.ZipInfo(new + device + "/firmware/")
                 d.external_attr = (0o40755 << 16) | 0x10

@@ -86,6 +86,12 @@ Rad Pro is flashed to the device.
 
 > Keep the backup file safe—you'll need it to restore the original firmware.
 
+If the device USB cable is connected after flashing, the installer waits for the device and sets its clock and time zone from the computer.
+
+### Updating Rad Pro (keeping settings)
+
+To update an already installed Rad Pro, run `update.bat` (Windows) or `./update.sh` (Linux/macOS) instead of the installer. Update does not erase the whole flash, so your settings and data log are kept. Use the installer instead when the new version changes the settings format or the firmware size.
+
 ### Restoring Original Firmware
 
 * **Windows:** drag the backup file onto `install.bat`
