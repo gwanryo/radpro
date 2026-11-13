@@ -1,6 +1,8 @@
 # Releases
 
-## 3.1.2
+## 3.1.2_ryo
+
+Fork release based on Rad Pro 3.1.1 for the Bosean FS-5000 (Korean build). Version strings use `_` because the installers split firmware file names on `-`.
 
 * **Bosean FS-5000** (Korean build)
 
